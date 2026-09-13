@@ -1,5 +1,4 @@
-# PrinceXmahto Premium Portfolio
-Multi-page luxury portfolio.
-Contact: princeraj75682@gmail.com
+# PrinceXmahto Ultimate Portfolio
+Multi-page premium portfolio with projects, case study, skills, services, FAQ, roadmap, contact form, email and Instagram.
+Email: princeraj74682@gmail.com
 Instagram: https://www.instagram.com/princeraj0205/
-The Number Lookup page contains the current live link supplied by the owner; replace it later if needed.

@@ -1,3 +1,5 @@
-# PrinceXmahto Multi-Page Portfolio
-Static multi-page portfolio. Pages: Home, Projects, Number Lookup, About, Services, Roadmap, Contact.
-Replace `yourmail@example.com` in `contact.html` with the actual email when ready.
+# PrinceXmahto Premium Portfolio
+Multi-page luxury portfolio.
+Contact: princeraj75682@gmail.com
+Instagram: https://www.instagram.com/princeraj0205/
+The Number Lookup page contains the current live link supplied by the owner; replace it later if needed.

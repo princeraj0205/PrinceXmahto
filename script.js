@@ -2,48 +2,9 @@ document.addEventListener('DOMContentLoaded',()=>{
   const header=document.querySelector('.site-header');
   const menu=document.querySelector('.menu');
   const nav=document.querySelector('.nav-links');
-
-  if(menu&&nav){
-    const closeMenu=()=>{nav.classList.remove('open');menu.setAttribute('aria-expanded','false')};
-    menu.addEventListener('click',()=>{const open=nav.classList.toggle('open');menu.setAttribute('aria-expanded',String(open))});
-    nav.querySelectorAll('a').forEach(link=>link.addEventListener('click',closeMenu));
-    document.addEventListener('click',e=>{if(nav.classList.contains('open')&&!nav.contains(e.target)&&!menu.contains(e.target))closeMenu()});
-    document.addEventListener('keydown',e=>{if(e.key==='Escape')closeMenu()});
-  }
-
-  const updateHeader=()=>header?.classList.toggle('scrolled',window.scrollY>18);
-  updateHeader();
-  window.addEventListener('scroll',updateHeader,{passive:true});
-  document.querySelectorAll('[data-year]').forEach(el=>el.textContent=new Date().getFullYear());
-
-  const reveals=document.querySelectorAll('.reveal');
-  if('IntersectionObserver'in window){
-    const observer=new IntersectionObserver(entries=>entries.forEach(entry=>{
-      if(entry.isIntersecting){entry.target.classList.add('show');observer.unobserve(entry.target)}
-    }),{threshold:.08});
-    reveals.forEach(el=>observer.observe(el));
-  }else reveals.forEach(el=>el.classList.add('show'));
-
-  const visual=document.querySelector('.hero-visual');
-  const core=document.querySelector('.visual-core');
-  const motionOK=window.matchMedia('(prefers-reduced-motion: no-preference)').matches;
-  if(visual&&core&&motionOK&&window.matchMedia('(pointer:fine)').matches){
-    let raf=0;
-    visual.addEventListener('pointermove',e=>{
-      const r=visual.getBoundingClientRect();
-      const x=(e.clientX-r.left)/r.width-.5;
-      const y=(e.clientY-r.top)/r.height-.5;
-      cancelAnimationFrame(raf);
-      raf=requestAnimationFrame(()=>{
-        visual.style.transform=`rotateX(${-y*2.8}deg) rotateY(${x*3.2}deg)`;
-        core.style.setProperty('--rx',`${-y*7}deg`);
-        core.style.setProperty('--ry',`${x*9}deg`);
-      });
-    });
-    visual.addEventListener('pointerleave',()=>{
-      visual.style.transform='rotateX(0deg) rotateY(0deg)';
-      core.style.setProperty('--rx','0deg');
-      core.style.setProperty('--ry','0deg');
-    });
-  }
+  if(menu&&nav){const closeMenu=()=>{nav.classList.remove('open');menu.setAttribute('aria-expanded','false')};menu.addEventListener('click',()=>{const open=nav.classList.toggle('open');menu.setAttribute('aria-expanded',String(open))});nav.querySelectorAll('a').forEach(link=>link.addEventListener('click',closeMenu));document.addEventListener('click',e=>{if(nav.classList.contains('open')&&!nav.contains(e.target)&&!menu.contains(e.target))closeMenu()});document.addEventListener('keydown',e=>{if(e.key==='Escape')closeMenu()})}
+  const updateHeader=()=>header?.classList.toggle('scrolled',window.scrollY>18);updateHeader();window.addEventListener('scroll',updateHeader,{passive:true});document.querySelectorAll('[data-year]').forEach(el=>el.textContent=new Date().getFullYear());
+  const reveals=document.querySelectorAll('.reveal');if('IntersectionObserver'in window){const observer=new IntersectionObserver(entries=>entries.forEach(entry=>{if(entry.isIntersecting){entry.target.classList.add('show');observer.unobserve(entry.target)}}),{threshold:.08});reveals.forEach(el=>observer.observe(el))}else reveals.forEach(el=>el.classList.add('show'));
+  const visual=document.querySelector('.hero-visual'),core=document.querySelector('.visual-core'),motionOK=window.matchMedia('(prefers-reduced-motion: no-preference)').matches;if(visual&&core&&motionOK&&window.matchMedia('(pointer:fine)').matches){let raf=0;visual.addEventListener('pointermove',e=>{const r=visual.getBoundingClientRect(),x=(e.clientX-r.left)/r.width-.5,y=(e.clientY-r.top)/r.height-.5;cancelAnimationFrame(raf);raf=requestAnimationFrame(()=>{visual.style.transform=`rotateX(${-y*2.8}deg) rotateY(${x*3.2}deg)`;core.style.setProperty('--rx',`${-y*7}deg`);core.style.setProperty('--ry',`${x*9}deg`)})});visual.addEventListener('pointerleave',()=>{visual.style.transform='rotateX(0deg) rotateY(0deg)';core.style.setProperty('--rx','0deg');core.style.setProperty('--ry','0deg')})}
+  if(window.PX_SUPABASE_URL&&!document.querySelector('script[data-px-auth]')){const s=document.createElement('script');s.src='auth.js?v=20260917-1';s.dataset.pxAuth='1';document.body.appendChild(s)}
 });

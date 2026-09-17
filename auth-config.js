@@ -1,0 +1,1 @@
+window.PX_SUPABASE_URL='https://dvoioacvqrujywwqqygo.supabase.co';window.PX_SUPABASE_KEY='sb_publishable_XJ-KHZyM2H9-ADJudvRKlw_9Mr17W1J';

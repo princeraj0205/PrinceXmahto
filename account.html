@@ -1,1 +1,84 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Account — PrinceXmahto</title><link rel="stylesheet" href="auth.css"><script src="auth-config.js"></script></head><body><main class="account"><div class="top"><div><p class="sub">PRINCEXMAHTO / ACCOUNT</p><h1>Your account.</h1></div><button id="logout" style="width:auto;padding:0 22px">Log out</button></div><section class="panel"><p class="sub">Signed in as</p><h2 id="email" style="margin-top:0"></h2><div class="field"><label>Display name</label><input id="name" type="text" placeholder="Your name"></div><button id="save">Save profile</button><div id="msg" class="msg"></div><p style="margin-top:24px"><a href="index.html" style="color:#0071e3">← Back to website</a></p></section></main><script src="auth.js"></script></body></html>
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="description" content="PrinceXmahto developer account dashboard.">
+<title>Dashboard — PrinceXmahto</title>
+<link rel="stylesheet" href="auth.css?v=20260917-3">
+<script src="auth-config.js"></script>
+</head>
+<body class="dashboard-page">
+<div class="app-shell">
+  <aside class="sidebar">
+    <a class="dev-brand" href="index.html"><span class="dev-mark">PX</span><span>PrinceXmahto<small>DEVELOPER WORKSPACE</small></span></a>
+    <div class="side-label">WORKSPACE</div>
+    <nav class="side-nav">
+      <a class="side-link active" href="account.html"><span>⌂</span> Overview</a>
+      <a class="side-link" href="projects.html"><span>◈</span> Projects</a>
+      <a class="side-link" href="roadmap.html"><span>↗</span> Roadmap</a>
+      <a class="side-link" href="services.html"><span>⌘</span> Services</a>
+    </nav>
+    <div class="side-label">ACCOUNT</div>
+    <nav class="side-nav">
+      <a class="side-link" href="contact.html"><span>@</span> Contact</a>
+      <button id="logout" class="logout-side"><span>↪</span> Sign out</button>
+    </nav>
+    <div class="sidebar-foot"><span class="status-dot"></span> Systems operational<br><small>PrinceXmahto / 2026</small></div>
+  </aside>
+
+  <main class="dashboard-main">
+    <header class="dash-header">
+      <div><p class="eyebrow">/ workspace / account</p><h1>Developer dashboard<span>.</span></h1></div>
+      <a class="site-button" href="index.html">VIEW SITE <b>↗</b></a>
+    </header>
+
+    <section class="welcome-row">
+      <div><span class="live-pill"><i></i> AUTHENTICATED</span><h2>Welcome back.</h2><p>Your account, profile and workspace activity in one place.</p></div>
+      <div class="code-badge"><span>PX</span><div><b>BUILD_MODE</b><small>ACTIVE · READY TO SHIP</small></div></div>
+    </section>
+
+    <section class="grid-2">
+      <article class="dash-card profile-card">
+        <div class="card-head"><span>01 / PROFILE</span><span class="card-icon">◎</span></div>
+        <div class="identity"><div class="avatar">PX</div><div><h3 id="email">Loading…</h3><p>Authenticated developer</p></div></div>
+        <div class="field compact"><label>DISPLAY NAME</label><input id="name" type="text" placeholder="Your name" autocomplete="name"></div>
+        <button id="save" class="primary-action">Save profile <span>↗</span></button>
+        <div id="msg" class="msg" aria-live="polite"></div>
+      </article>
+
+      <article class="dash-card status-card">
+        <div class="card-head"><span>02 / SYSTEM</span><span class="card-icon">◌</span></div>
+        <div class="system-line"><span class="status-dot"></span><div><b>All systems operational</b><small>Authentication service is connected</small></div></div>
+        <div class="metric"><span>AUTH</span><b>CONNECTED</b></div>
+        <div class="metric"><span>PROFILE</span><b>SYNCED</b></div>
+        <div class="metric"><span>WORKSPACE</span><b>READY</b></div>
+      </article>
+    </section>
+
+    <section class="dash-card workspace-card">
+      <div class="card-head"><span>03 / TOOLKIT</span><span>DEVELOPER STACK</span></div>
+      <div class="stack-grid">
+        <div><b>HTML</b><small>STRUCTURE</small></div><div><b>CSS</b><small>INTERFACE</small></div><div><b>JAVASCRIPT</b><small>INTERACTION</small></div><div><b>API</b><small>INTEGRATION</small></div><div><b>GITHUB</b><small>VERSION CONTROL</small></div><div><b>VERCEL</b><small>DEPLOYMENT</small></div>
+      </div>
+    </section>
+
+    <section class="bottom-grid">
+      <article class="dash-card command-card">
+        <div class="card-head"><span>04 / QUICK ACCESS</span><span>COMMANDS</span></div>
+        <a href="projects.html"><span><b>01</b> Explore projects</span><i>↗</i></a>
+        <a href="roadmap.html"><span><b>02</b> View roadmap</span><i>↗</i></a>
+        <a href="contact.html"><span><b>03</b> Start a conversation</span><i>↗</i></a>
+      </article>
+      <article class="dash-card terminal-card">
+        <div class="terminal-top"><span>● ● ●</span><small>prince@workspace:~</small></div>
+        <div class="terminal-body"><p><span>$</span> whoami</p><strong>princexmahto</strong><p><span>$</span> status</p><strong class="ok">online · building</strong><p><span>$</span> next --ship</p><strong>something useful.</strong><b class="cursor">_</b></div>
+      </article>
+    </section>
+
+    <footer class="dash-footer"><span>PRINCEXMAHTO / PERSONAL DIGITAL WORKSPACE</span><span>© <b data-year>2026</b> · BUILT WITH INTENT</span></footer>
+  </main>
+</div>
+<script src="auth.js"></script>
+<script>document.querySelector('[data-year]')?.replaceChildren(String(new Date().getFullYear()));</script>
+</body>
+</html>

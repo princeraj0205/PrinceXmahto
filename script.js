@@ -1,1 +1,50 @@
-document.addEventListener('DOMContentLoaded',()=>{const h=document.querySelector('.site-header'),m=document.querySelector('.menu'),n=document.querySelector('.nav-links');if(m&&n)m.onclick=()=>n.classList.toggle('open');if(n)n.querySelectorAll('a').forEach(a=>a.onclick=()=>n.classList.remove('open'));if(h)window.addEventListener('scroll',()=>h.classList.toggle('scrolled',scrollY>20),{passive:true});document.querySelectorAll('[data-year]').forEach(e=>e.textContent=new Date().getFullYear());const r=document.querySelectorAll('.reveal');if('IntersectionObserver'in window){const o=new IntersectionObserver(x=>x.forEach(e=>{if(e.isIntersecting){e.target.classList.add('show');o.unobserve(e.target)}}),{threshold:.08});r.forEach(e=>o.observe(e))}else r.forEach(e=>e.classList.add('show'))});
+document.addEventListener('DOMContentLoaded',()=>{
+  const header=document.querySelector('.site-header');
+  const menu=document.querySelector('.menu');
+  const nav=document.querySelector('.nav-links');
+
+  if(menu&&nav){
+    menu.setAttribute('aria-expanded','false');
+    menu.setAttribute('aria-controls','site-navigation');
+    if(nav.id!=='site-navigation') nav.id='site-navigation';
+
+    const closeMenu=()=>{
+      nav.classList.remove('open');
+      menu.setAttribute('aria-expanded','false');
+    };
+
+    menu.addEventListener('click',()=>{
+      const open=nav.classList.toggle('open');
+      menu.setAttribute('aria-expanded',String(open));
+    });
+
+    nav.querySelectorAll('a').forEach(link=>link.addEventListener('click',closeMenu));
+
+    document.addEventListener('click',event=>{
+      if(nav.classList.contains('open')&&!nav.contains(event.target)&&!menu.contains(event.target)) closeMenu();
+    });
+
+    document.addEventListener('keydown',event=>{
+      if(event.key==='Escape') closeMenu();
+    });
+  }
+
+  const updateHeader=()=>header?.classList.toggle('scrolled',window.scrollY>20);
+  updateHeader();
+  window.addEventListener('scroll',updateHeader,{passive:true});
+
+  document.querySelectorAll('[data-year]').forEach(el=>el.textContent=new Date().getFullYear());
+
+  const reveals=document.querySelectorAll('.reveal');
+  if('IntersectionObserver' in window){
+    const observer=new IntersectionObserver(entries=>{
+      entries.forEach(entry=>{
+        if(entry.isIntersecting){
+          entry.target.classList.add('show');
+          observer.unobserve(entry.target);
+        }
+      });
+    },{threshold:.08});
+    reveals.forEach(el=>observer.observe(el));
+  }else reveals.forEach(el=>el.classList.add('show'));
+});

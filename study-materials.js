@@ -1,402 +1,52 @@
-(() => {
-  'use strict';
-
-  const DATA = window.PX_STUDY_DATA;
-  const $ = (s, r = document) => r.querySelector(s);
-  const $$ = (s, r = document) => [...r.querySelectorAll(s)];
-  const content = $('#content');
-  const tree = $('#sideTree');
-  const crumbs = $('#breadcrumbs');
-  const search = $('#globalSearch');
-  const year = DATA?.years?.[0];
-  const STORE = 'px-study-state-v4';
-
-  if (!DATA || !year || !content || !tree || !crumbs) {
-    if (content) content.innerHTML = '<div class="empty"><h3>Study Materials could not load.</h3><p>Please refresh the page.</p></div>';
-    return;
-  }
-
-  let state = { done: {}, saved: {} };
-  try { state = JSON.parse(localStorage.getItem(STORE) || JSON.stringify(state)); } catch (_) {}
-  const saveState = () => localStorage.setItem(STORE, JSON.stringify(state));
-
-  const esc = (value) => String(value ?? '').replace(/[&<>\'"]/g, (c) => ({
-    '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'
-  }[c]));
-  const slug = (value) => String(value || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
-  const normalizeTopic = (topic) => typeof topic === 'string'
-    ? { id: slug(topic), title: topic, type: 'concept', keywords: topic, notes: null }
-    : topic;
-
-  const current = () => {
-    const u = new URL(location.href);
-    const out = {};
-    ['branch', 'semester', 'subject', 'unit', 'topic', 'q'].forEach((k) => out[k] = u.searchParams.get(k) || '');
-    return out;
-  };
-
-  const branchById = (id) => year.branches.find((b) => b.id === id) || year.branches[0];
-  const getBranch = () => branchById(current().branch);
-  const semById = (b, id) => b?.semesters?.find((s) => s.id === id) || b?.semesters?.[0];
-  const subjectsOf = (b) => (b?.semesters || []).flatMap((s) => (s.subjects || []).map((subject) => ({ ...subject, semester: s })));
-  const subjectById = (b, id) => subjectsOf(b).find((s) => s.id === id);
-  const unitById = (s, id) => s?.units?.find((u) => u.id === id);
-  const topicById = (u, id) => (u?.topics || []).map(normalizeTopic).find((t) => t.id === id);
-  const topicKey = (b, s, u, t) => `${b.id}:${s.id}:${u.id}:${t.id || slug(t.title)}`;
-
-  function go(params = {}, replace = false) {
-    const u = new URL(location.href);
-    Object.entries(params).forEach(([key, value]) => {
-      if (value) u.searchParams.set(key, value);
-      else u.searchParams.delete(key);
-    });
-    history[replace ? 'replaceState' : 'pushState']({}, '', u);
-    render();
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  }
-
-  function setBreadcrumbs(items) {
-    crumbs.innerHTML = items.map((item, i) => {
-      if (i === items.length - 1) return `<b>${esc(item.label)}</b>`;
-      return `<a href="${item.href || '#'}" data-crumb="${i}">${esc(item.label)}</a><span>/</span>`;
-    }).join('');
-    $$('[data-crumb]', crumbs).forEach((a) => {
-      a.addEventListener('click', (e) => {
-        if (a.getAttribute('href') === '#') e.preventDefault();
-      });
-    });
-  }
-
-  function progress(b, subject) {
-    let total = 0;
-    let done = 0;
-    (subject.units || []).forEach((unit) => (unit.topics || []).forEach((raw) => {
-      const topic = normalizeTopic(raw);
-      total++;
-      if (state.done[topicKey(b, subject, unit, topic)]) done++;
-    }));
-    return total ? Math.round((done / total) * 100) : 0;
-  }
-
-  function renderTree(activeSubject = '') {
-    const b = getBranch();
-    tree.innerHTML = `
-      <div class="tree-group-label">BRANCHES · 2026</div>
-      ${year.branches.map((item) => `
-        <button class="tree-btn ${item.id === b.id ? 'active' : ''}" data-branch="${esc(item.id)}">
-          <span>${esc(item.title)}</span><span>›</span>
-        </button>`).join('')}
-      <div class="tree-group-label" style="margin-top:16px">SEMESTER I · SUBJECTS</div>
-      ${(b.semesters || []).map((sem) => `
-        <button class="tree-btn ${current().semester === sem.id ? 'active' : ''}" data-sem="${esc(sem.id)}">
-          <span>${esc(sem.title)}</span><span>${sem.subjects?.length || 0}</span>
-        </button>
-        <div class="tree-sub">
-          ${(sem.subjects || []).map((subject) => `
-            <button class="tree-btn ${activeSubject === subject.id ? 'active' : ''}" data-sub="${esc(subject.id)}">
-              <span>${esc(subject.title)}</span><small>${esc(subject.code || '')}</small>
-            </button>`).join('')}
-        </div>`).join('')}
-    `;
-
-    $$('[data-branch]', tree).forEach((button) => button.onclick = () => go({ branch: button.dataset.branch, semester: '', subject: '', unit: '', topic: '', q: '' }));
-    $$('[data-sem]', tree).forEach((button) => button.onclick = () => go({ branch: b.id, semester: button.dataset.sem, subject: '', unit: '', topic: '', q: '' }));
-    $$('[data-sub]', tree).forEach((button) => button.onclick = () => {
-      const subject = subjectById(b, button.dataset.sub);
-      if (subject) go({ branch: b.id, semester: subject.semester.id, subject: subject.id, unit: '', topic: '', q: '' });
-    });
-  }
-
-  function notesFor(subject, unit, topic) {
-    if (topic.notes) return topic.notes;
-    const title = topic.title;
-    const low = `${subject.title} ${unit.title} ${title}`.toLowerCase();
-
-    let definition = `${title} is a topic included in the SBTE Bihar Admission Session 2026 first-semester curriculum.`;
-    let formula = 'Write the standard formula, law, rule or procedure applicable to the exact problem.';
-    let example = `Start with the given information, identify the relevant principle for ${title}, work through the steps in order, and state the final result clearly.`;
-
-    if (/matrix/.test(low)) definition = 'A matrix is a rectangular arrangement of numbers or symbols in rows and columns. It provides a compact way to represent data and mathematical relationships.';
-    else if (/determinant/.test(low)) definition = 'A determinant is a single numerical value calculated from a square matrix. It is used to study matrix properties and solve simultaneous linear equations.';
-    else if (/cramer/.test(low)) definition = 'Cramer’s Rule solves a system of simultaneous linear equations using determinants, provided the coefficient determinant is non-zero.';
-    else if (/limit/.test(low)) definition = 'A limit describes the value that a function approaches as its input approaches a specified value.';
-    else if (/continuity/.test(low)) definition = 'A function is continuous at a point when the function value agrees with the limiting value at that point.';
-    else if (/derivative|differentiation/.test(low)) { definition = 'Differentiation is the process of finding the derivative of a function. The derivative represents instantaneous rate of change and the slope of a tangent.'; formula = "f′(x) = lim(h→0) [f(x+h) − f(x)] / h"; }
-    else if (/slope|straight line/.test(low)) { definition = 'The slope of a line measures its inclination and is the ratio of change in y to change in x.'; formula = 'm = (y₂ − y₁) / (x₂ − x₁)'; }
-    else if (/probability/.test(low)) { definition = 'Probability measures the likelihood of an event occurring and ranges from 0 to 1.'; formula = 'P(A) = Number of favourable outcomes / Total number of equally likely outcomes'; }
-    else if (/circle/.test(low)) definition = 'A circle is the locus of points in a plane that are at a fixed distance from a fixed point called the centre.';
-    else if (/parabola/.test(low)) definition = 'A parabola is a conic whose points are equidistant from a fixed point called the focus and a fixed line called the directrix.';
-    else if (/ellipse/.test(low)) definition = 'An ellipse is a conic for which the sum of distances from a point on the curve to two fixed foci is constant.';
-    else if (/hyperbola/.test(low)) definition = 'A hyperbola is a conic for which the absolute difference of distances from a point on the curve to two fixed foci is constant.';
-    else if (/artificial intelligence|\bai\b/.test(low)) definition = 'Artificial Intelligence is a field of computing concerned with systems that perform tasks involving capabilities such as learning, reasoning, perception and language.';
-    else if (/internet|world wide web/.test(low)) definition = 'The Internet is a global network of interconnected networks. The World Wide Web is a service that provides linked resources over the Internet.';
-    else if (/semiconductor/.test(low)) definition = 'A semiconductor is a material whose electrical conductivity lies between that of a conductor and an insulator and can be controlled for electronic applications.';
-
-    return {
-      definition,
-      explanation: [
-        `Meaning: understand what ${title} represents and learn the important technical terms.`,
-        `Principle: identify the rule, process, law or relationship used in ${title}.`,
-        `Method: write the given information first, then apply the principle step-by-step instead of jumping to the answer.`,
-        `Application: connect ${title} with an engineering, laboratory, computing or everyday use whenever applicable.`
-      ],
-      formula,
-      example,
-      important: [
-        'Learn the definition and key terms accurately.',
-        'Write the conditions and units before applying a formula or procedure.',
-        'Use a labelled diagram, flowchart or table when it improves understanding.',
-        'For numerical problems, show the formula, substitution, calculation and final answer.'
-      ],
-      mistakes: [
-        'Skipping conditions, assumptions or units.',
-        'Using a formula without explaining its symbols.',
-        'Writing only the final answer when working steps are expected.'
-      ],
-      short: [`Define ${title}.`, `State the main principle or rule of ${title}.`, `Write one application of ${title}.`],
-      long: [`Explain ${title} in detail with a suitable example.`, `Describe the principle, important steps and applications of ${title}.`],
-      mcq: [
-        [`${title} should primarily be learned through`, 'Concept + example + practice', 'Memorisation only', 'Skipping applications', 'None'],
-        ['A good numerical answer normally includes', 'Formula + working + result', 'Only the final number', 'Only the question', 'No units']
-      ]
-    };
-  }
-
-  function diagram(title, subject) {
-    const name = `${subject.title} ${title}`.toLowerCase();
-    let flow = ['Concept', 'Principle', 'Example', 'Application'];
-    if (/math|calculus|algebra|geometry|probability|statistics/.test(name)) flow = ['Given', 'Formula / Rule', 'Calculation', 'Result'];
-    if (/computer|internet|ict|artificial intelligence|python/.test(name)) flow = ['Input', 'Process', 'System / Tool', 'Output'];
-    return `<div class="diagram-box"><div class="diagram-title">VISUAL SUMMARY · ${esc(title)}</div><div class="diagram"><div class="diagram-row">${flow.map((item, i) => `${i ? '<span class="arrow">→</span>' : ''}<div class="diagram-node">${esc(item)}</div>`).join('')}</div></div><p class="diagram-caption">Quick visual memory map. Use the full explanation below for the complete concept.</p></div>`;
-  }
-
-  function noteHtml(branch, subject, unit, topic) {
-    const n = notesFor(subject, unit, topic);
-    const list = (value) => Array.isArray(value) ? value : [];
-    const saved = !!state.saved[topicKey(branch, subject, unit, topic)];
-    const done = !!state.done[topicKey(branch, subject, unit, topic)];
-
-    return `<article class="notes">
-      <div class="section-kicker">${esc(subject.code)} · ${esc(unit.title)}</div>
-      <h1>${esc(topic.title)}</h1>
-      <p class="content-lead">${esc(subject.title)} · ${esc(branch.title)} · SBTE Bihar · Admission Session 2026</p>
-      <div class="note-toolbar no-print">
-        <button class="action-btn ${done ? 'primary' : ''}" data-done="${esc(topicKey(branch, subject, unit, topic))">${done ? '✓ Completed' : 'Mark completed'}</button>
-        <button class="action-btn ${saved ? 'primary' : ''}" data-save="${esc(topicKey(branch, subject, unit, topic))">${saved ? '★ Bookmarked' : '☆ Bookmark'}</button>
-        <button class="action-btn" data-print-topic="${esc(topic.id)}">Download PDF</button>
-      </div>
-      <div class="definition"><b>Simple Definition</b><p>${esc(n.definition)}</p></div>
-      <h2>1. Concept Explanation</h2>
-      <ol>${list(n.explanation).map((x) => `<li>${esc(x)}</li>`).join('')}</ol>
-      ${diagram(topic.title, subject)}
-      <h2>2. Formula / Rule / Key Principle</h2>
-      <div class="formula">${esc(n.formula)}</div>
-      <h2>3. Example / Application</h2>
-      <div class="example"><b>Step-by-step understanding</b><p>${esc(n.example)}</p></div>
-      <h2>4. Important Points</h2>
-      <div class="important"><ul>${list(n.important).map((x) => `<li>${esc(x)}</li>`).join('')}</ul></div>
-      <h2>5. Common Mistakes</h2>
-      <ul>${list(n.mistakes).map((x) => `<li>${esc(x)}</li>`).join('')}</ul>
-      <div class="exam-box"><h2>6. Exam Practice</h2><b>Short Questions</b><ul>${list(n.short).map((x) => `<li>${esc(x)}</li>`).join('')}</ul><b>Long Questions</b><ul>${list(n.long).map((x) => `<li>${esc(x)}</li>`).join('')}</ul>${list(n.mcq).map((q, i) => `<div class="mcq"><b>MCQ ${i + 1}. ${esc(q[0])}</b>${q.slice(1).map((o, j) => `<label>${String.fromCharCode(65 + j)}. ${esc(o)}</label>`).join('')}</div>`).join('')}</div>
-      <h2>7. Quick Revision</h2>
-      <ul><li>Definition → principle → formula/rule → example → application.</li><li>Practise at least one basic and one exam-style question.</li><li>Revise the important points before the examination.</li></ul>
-    </article>`;
-  }
-
-  function printStyles() {
-    const style = document.createElement('style');
-    style.id = 'pxPrintStyle';
-    style.textContent = `
-      @media print {
-        @page { size: A4; margin: 18mm 15mm 19mm; }
-        body.print-mode { background: #fff !important; }
-        body.print-mode .sm-header, body.print-mode .sm-footer, body.print-mode .sidebar,
-        body.print-mode .breadcrumbs, body.print-mode .subject-actions, body.print-mode .filter-row,
-        body.print-mode .no-print { display:none !important; }
-        body.print-mode .catalog, body.print-mode .layout, body.print-mode .content { display:block !important; width:100% !important; max-width:none !important; margin:0 !important; padding:0 !important; }
-        .print-cover { min-height:245mm; display:flex; flex-direction:column; justify-content:center; align-items:center; text-align:center; page-break-after:always; }
-        .print-cover img { width:90px; height:90px; border-radius:50%; margin-bottom:22px; }
-        .print-cover h1 { font:800 30pt/1.1 Manrope,Arial,sans-serif; max-width:160mm; }
-        .print-cover p { font:12pt/1.6 Arial,sans-serif; color:#555; }
-        .print-page-break { page-break-before:always; }
-        .notes { max-width:none !important; box-shadow:none !important; border:0 !important; border-radius:0 !important; padding:0 !important; margin:0 !important; }
-        .notes h1 { font-size:25pt !important; }
-        .notes h2 { font-size:15pt !important; margin-top:20px; }
-        .notes p, .notes li { font-size:10.5pt !important; line-height:1.65 !important; }
-        .definition, .formula, .example, .important, .exam-box, .diagram-box { break-inside:avoid; }
-        .px-print-head { position:fixed; top:-13mm; left:0; right:0; display:flex; justify-content:space-between; align-items:center; gap:10px; border-bottom:1px solid #aaa; padding-bottom:4px; font:7.5pt Arial,sans-serif; color:#444; }
-        .px-print-head img { width:18px; height:18px; border-radius:50%; }
-        .px-print-foot { position:fixed; bottom:-14mm; left:0; right:0; display:flex; justify-content:space-between; border-top:1px solid #aaa; padding-top:4px; font:7.5pt Arial,sans-serif; color:#555; }
-        .page-counter::after { content:'Page ' counter(page); }
-      }
-    `;
-    document.head.appendChild(style);
-  }
-
-  function removePrintStuff() {
-    $('#pxPrintFrame')?.remove();
-    $('#pxPrintStyle')?.remove();
-  }
-
-  function doPrint(subject, unit, branch, topics, title) {
-    const old = content.innerHTML;
-    document.body.classList.add('print-mode');
-    content.innerHTML = `<div class="print-document"><div class="print-cover"><img src="/assets/princexmahto-logo.svg" alt="PrinceXmahto"><div class="section-kicker">PRINCEXMAHTO · STUDY MATERIALS</div><h1>${esc(title)}</h1><p>${esc(subject.title)} · ${esc(branch.title)} · SBTE Bihar · Admission Session 2026</p><span>Detailed Notes · A4 PDF Edition</span></div>${topics.map((t) => noteHtml(branch, subject, unit, t)).join('<div class="print-page-break"></div>')}</div>`;
-
-    const frame = document.createElement('div');
-    frame.id = 'pxPrintFrame';
-    frame.innerHTML = `<div class="px-print-head"><img src="/assets/princexmahto-logo.svg" alt=""><span>PrinceXmahto · Study Materials</span><span>SBTE Bihar · 2026</span></div><div class="px-print-foot"><span>${esc(subject.code)} · ${esc(unit.title)}</span><span>Learn · Practise · Revise · <i class="page-counter"></i></span></div>`;
-    document.body.appendChild(frame);
-    printStyles();
-
-    let restored = false;
-    const restore = () => {
-      if (restored) return;
-      restored = true;
-      document.body.classList.remove('print-mode');
-      removePrintStuff();
-      content.innerHTML = old;
-      render();
-      window.removeEventListener('afterprint', restore);
-    };
-    window.addEventListener('afterprint', restore);
-    setTimeout(() => window.print(), 250);
-  }
-
-  function printUnit(subject, unit) {
-    doPrint(subject, unit, getBranch(), (unit.topics || []).map(normalizeTopic), unit.title);
-  }
-
-  function printSubject(subject) {
-    const allTopics = (subject.units || []).flatMap((unit) => (unit.topics || []).map(normalizeTopic));
-    const pseudoUnit = { id: 'complete', title: `Complete Notes · ${subject.title}`, topics: allTopics };
-    doPrint(subject, pseudoUnit, getBranch(), allTopics, `${subject.title} · Complete Notes`);
-  }
-
-  function printTopic(subject, unit, topic) {
-    doPrint(subject, unit, getBranch(), [topic], topic.title);
-  }
-
-  function branchCard(branch) {
-    const subjects = subjectsOf(branch);
-    return `<article class="card branch-card"><div class="card-top"><span class="code">${esc(branch.code || 'DIPLOMA')}</span><span class="pill">ADMISSION 2026</span></div><h3>${esc(branch.title)}</h3><p>${subjects.length} Semester I subjects · Units · Topics · Detailed Notes</p><div class="card-foot"><span>SBTE Bihar · Semester I</span><button class="open-btn" data-open-branch="${esc(branch.id)}">OPEN BRANCH →</button></div></article>`;
-  }
-
-  function renderHome() {
-    const b = getBranch();
-    setBreadcrumbs([{ label: 'Study Materials' }, { label: 'Diploma' }, { label: '1st Year' }]);
-    renderTree('');
-    content.innerHTML = `
-      <div class="section-kicker">DIPLOMA · 1ST YEAR · SEMESTER I</div>
-      <h2>Choose your branch.</h2>
-      <p class="content-lead">Start with your branch, open a subject, then choose a unit and topic to read the notes. Every unit and subject also has an A4 PDF option.</p>
-      <div class="filter-row"><span class="filter">${year.branches.length} branches</span><span class="filter">Semester I</span><span class="filter">Detailed Notes</span><span class="filter">Unit-wise PDF</span></div>
-      <div class="cards">${year.branches.map(branchCard).join('')}</div>
-      <div class="study-how"><div><b>01</b><strong>Choose branch</strong><span>Select your Diploma branch.</span></div><div><b>02</b><strong>Choose subject</strong><span>Open syllabus units and topics.</span></div><div><b>03</b><strong>Read notes</strong><span>Learn, revise and practise.</span></div><div><b>04</b><strong>Download PDF</strong><span>Save A4 notes with your logo.</span></div></div>`;
-    $$('.branch-card [data-open-branch]').forEach((button) => button.onclick = () => go({ branch: button.dataset.openBranch, semester: '', subject: '', unit: '', topic: '', q: '' }));
-  }
-
-  function renderBranch() {
-    const b = getBranch();
-    setBreadcrumbs([{ label: 'Study Materials' }, { label: 'Diploma' }, { label: '1st Year' }, { label: b.title }]);
-    renderTree('');
-    const subjects = subjectsOf(b);
-    content.innerHTML = `<div class="section-kicker">${esc(b.code)} · SEMESTER I</div><h2>${esc(b.title)}</h2><p class="content-lead">All Semester I subjects for SBTE Bihar Admission Session 2026. Open any subject to see its units, topics, notes and PDF downloads.</p><div class="filter-row"><span class="filter">${subjects.length} subjects</span><span class="filter">Admission 2026</span><span class="filter">Notes + Practice</span></div><div class="cards subject-cards">${subjects.map((s) => `<article class="card"><div class="card-top"><span class="code">${esc(s.code || '')}</span><span class="pill">${esc(s.category || 'SUBJECT')}</span></div><h3>${esc(s.title)}</h3><p>${(s.units || []).length} units · ${(s.units || []).reduce((n, u) => n + (u.topics || []).length, 0)} topics · ${progress(b, s)}% complete</p><div class="card-foot"><span>${esc(s.semester.title)}</span><button class="open-btn" data-open-sub="${esc(s.id)}">OPEN SUBJECT →</button></div></article>`).join('')}</div>`;
-    $$('[data-open-sub]').forEach((button) => {
-      const s = subjectById(b, button.dataset.openSub);
-      if (s) button.onclick = () => go({ branch: b.id, semester: s.semester.id, subject: s.id, unit: '', topic: '', q: '' });
-    });
-  }
-
-  function renderSubject() {
-    const c = current();
-    const b = getBranch();
-    const s = subjectById(b, c.subject);
-    if (!s) return renderBranch();
-    const sem = s.semester;
-    setBreadcrumbs([{ label: 'Study Materials' }, { label: b.title }, { label: sem.title }, { label: s.title }]);
-    renderTree(s.id);
-
-    content.innerHTML = `<div class="subject-head"><div><div class="section-kicker">${esc(s.code || '')} · ${esc(s.category || 'SUBJECT')}</div><h2>${esc(s.title)}</h2><p class="content-lead">${esc(b.title)} · ${esc(sem.title)} · SBTE Bihar Admission Session 2026</p></div><div class="subject-actions"><button class="action-btn primary" id="downloadSubject">DOWNLOAD COMPLETE PDF</button><button class="action-btn" data-back-branch>← Subjects</button></div></div><div class="filter-row"><span class="filter">${(s.units || []).length} units</span><span class="filter">${(s.units || []).reduce((n, u) => n + (u.topics || []).length, 0)} topics</span><span class="filter">${progress(b, s)}% complete</span><span class="filter">A4 PDF</span></div><div class="unit-list">${(s.units || []).map((unit, index) => `<article class="unit-card"><div class="unit-head"><div><small>UNIT ${index + 1}</small><h3>${esc(unit.title)}</h3></div><button class="action-btn" data-print-unit="${esc(unit.id)}">DOWNLOAD UNIT PDF</button></div><div class="topic-grid">${(unit.topics || []).map((raw) => { const t = normalizeTopic(raw); return `<button class="topic" data-topic="${esc(t.id)}"><strong>${esc(t.title)}</strong><span>${esc(t.type || 'concept')} · Read detailed notes →</span></button>`; }).join('')}</div></article>`).join('')}</div>`;
-
-    $('#downloadSubject').onclick = () => printSubject(s);
-    $('[data-back-branch]').onclick = () => go({ branch: b.id, semester: '', subject: '', unit: '', topic: '', q: '' });
-    $$('[data-print-unit]').forEach((button) => { const u = unitById(s, button.dataset.printUnit); if (u) button.onclick = () => printUnit(s, u); });
-    $$('[data-topic]').forEach((button) => { const u = (s.units || []).find((unit) => topicById(unit, button.dataset.topic)); if (u) button.onclick = () => go({ branch: b.id, semester: sem.id, subject: s.id, unit: u.id, topic: button.dataset.topic, q: '' }); });
-  }
-
-  function renderUnit() {
-    const c = current();
-    const b = getBranch();
-    const s = subjectById(b, c.subject);
-    const u = unitById(s, c.unit);
-    if (!s || !u) return renderSubject();
-    setBreadcrumbs([{ label: 'Study Materials' }, { label: b.title }, { label: s.title }, { label: u.title }]);
-    renderTree(s.id);
-    content.innerHTML = `<div class="subject-head"><div><div class="section-kicker">${esc(s.code || '')} · UNIT</div><h2>${esc(u.title)}</h2><p class="content-lead">Choose a topic to open full notes.</p></div><div class="subject-actions"><button class="action-btn primary" id="downloadUnit">DOWNLOAD UNIT PDF</button></div></div><div class="topic-grid unit-topic-grid">${(u.topics || []).map((raw) => { const t = normalizeTopic(raw); return `<button class="topic" data-topic="${esc(t.id)}"><strong>${esc(t.title)}</strong><span>Detailed notes · Example · Exam practice →</span></button>`; }).join('')}</div>`;
-    $('#downloadUnit').onclick = () => printUnit(s, u);
-    $$('[data-topic]').forEach((button) => button.onclick = () => go({ branch: b.id, semester: s.semester.id, subject: s.id, unit: u.id, topic: button.dataset.topic, q: '' }));
-  }
-
-  function renderTopic() {
-    const c = current();
-    const b = getBranch();
-    const s = subjectById(b, c.subject);
-    const u = unitById(s, c.unit);
-    const t = topicById(u, c.topic);
-    if (!s || !u || !t) return renderSubject();
-    setBreadcrumbs([{ label: 'Study Materials' }, { label: b.title }, { label: s.title }, { label: u.title }, { label: t.title }]);
-    renderTree(s.id);
-    content.innerHTML = noteHtml(b, s, u, t);
-
-    const key = topicKey(b, s, u, t);
-    $('[data-done]')?.addEventListener('click', () => { state.done[key] = !state.done[key]; saveState(); renderTopic(); });
-    $('[data-save]')?.addEventListener('click', () => { state.saved[key] = !state.saved[key]; saveState(); renderTopic(); });
-    $('[data-print-topic]')?.addEventListener('click', () => printTopic(s, u, t));
-  }
-
-  function renderSearch(query) {
-    const q = query.trim().toLowerCase();
-    if (!q) return renderHome();
-    const results = [];
-    year.branches.forEach((b) => (b.semesters || []).forEach((sem) => (sem.subjects || []).forEach((s) => {
-      const subjectMatch = `${b.title} ${s.title} ${s.code || ''}`.toLowerCase().includes(q);
-      (s.units || []).forEach((u) => (u.topics || []).forEach((raw) => {
-        const t = normalizeTopic(raw);
-        const hay = `${b.title} ${s.title} ${s.code || ''} ${u.title} ${t.title} ${t.keywords || ''}`.toLowerCase();
-        if (subjectMatch || hay.includes(q)) results.push({ b, sem, s, u, t });
-      }));
-    })));
-
-    setBreadcrumbs([{ label: 'Study Materials' }, { label: 'Search' }, { label: query }]);
-    renderTree('');
-    content.innerHTML = `<div class="section-kicker">SEARCH RESULTS</div><h2>Results for “${esc(query)}”</h2><p class="content-lead">${results.length} matching topics found across the 2026 first-semester catalogue.</p><div class="search-results">${results.length ? results.map((r) => `<button class="result" data-result="${esc(r.b.id)}|${esc(r.s.id)}|${esc(r.u.id)}|${esc(r.t.id)}"><strong>${esc(r.t.title)}</strong><small>${esc(r.b.title)} · ${esc(r.s.title)} · ${esc(r.u.title)} · ${esc(r.s.code || '')}</small></button>`).join('') : '<div class="empty"><h3>No matching notes found.</h3><p>Try a branch, subject name, course code, unit or topic.</p></div>'}</div>`;
-    $$('[data-result]').forEach((button) => {
-      button.onclick = () => { const [branchId, subjectId, unitId, topicId] = button.dataset.result.split('|'); const b = branchById(branchId); const s = subjectById(b, subjectId); go({ branch: b.id, semester: s.semester.id, subject: s.id, unit: unitId, topic: topicId, q: '' }); };
-    });
-  }
-
-  function render() {
-    const c = current();
-    if (c.q) return renderSearch(c.q);
-    if (!c.branch && !c.subject && !c.unit && !c.topic) return renderHome();
-    if (c.topic) return renderTopic();
-    if (c.unit) return renderUnit();
-    if (c.subject) return renderSubject();
-    return renderBranch();
-  }
-
-  search?.addEventListener('input', () => {
-    const q = search.value.trim();
-    const u = new URL(location.href);
-    if (q) u.searchParams.set('q', q); else u.searchParams.delete('q');
-    history.replaceState({}, '', u);
-    clearTimeout(window.__pxSearchTimer);
-    window.__pxSearchTimer = setTimeout(render, 120);
-  });
-  search?.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); renderSearch(search.value); } });
-  document.addEventListener('keydown', (e) => { if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); search?.focus(); } });
-  window.addEventListener('popstate', render);
-
-  render();
+(()=>{
+'use strict';
+const D=window.PX_STUDY_DATA,$=s=>document.querySelector(s),$$=(s,r=document)=>[...r.querySelectorAll(s)],C=$('#content'),T=$('#sideTree'),B=$('#breadcrumbs'),S=$('#globalSearch'),Y=D?.years?.[0],STORE='px-study-state-v5';
+if(!D||!Y||!C||!T||!B){if(C)C.innerHTML='<div class="empty"><h3>Study Materials could not load.</h3><p>Please refresh the page.</p></div>';return}
+let state={done:{},saved:{}};try{state=JSON.parse(localStorage.getItem(STORE)||JSON.stringify(state))}catch(e){};const save=()=>localStorage.setItem(STORE,JSON.stringify(state));
+const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const slug=v=>String(v||'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
+const topic=v=>typeof v==='string'?{id:slug(v),title:v}:v;
+const params=()=>{const u=new URL(location.href),o={};['branch','semester','subject','unit','topic','q'].forEach(k=>o[k]=u.searchParams.get(k)||'');return o};
+const branch=id=>Y.branches.find(x=>x.id===id)||Y.branches[0];
+const subjects=b=>(b?.semesters||[]).flatMap(s=>(s.subjects||[]).map(x=>({...x,semester:s})));
+const subject=(b,id)=>subjects(b).find(x=>x.id===id);
+const unit=(s,id)=>s?.units?.find(x=>x.id===id);
+const getTopic=(u,id)=>(u?.topics||[]).map(topic).find(x=>x.id===id);
+const key=(b,s,u,t)=>`${b.id}:${s.id}:${u.id}:${t.id}`;
+function go(o={}){const u=new URL(location.href);Object.entries(o).forEach(([k,v])=>v?u.searchParams.set(k,v):u.searchParams.delete(k));history.pushState({},'',u);render();scrollTo({top:0,behavior:'smooth'})}
+function crumbs(a){B.innerHTML=a.map((x,i)=>i===a.length-1?`<b>${esc(x.t)}</b>`:`<a href="${x.h||'#'}">${esc(x.t)}</a><span>/</span>`).join('')}
+function tree(active=''){const b=branch(params().branch);T.innerHTML='<div class="tree-group-label">BRANCHES · 2026</div>'+Y.branches.map(x=>`<button class="tree-btn ${x.id===b.id?'active':''}" data-b="${esc(x.id)}"><span>${esc(x.title)}</span><span>›</span></button>`).join('')+'<div class="tree-group-label" style="margin-top:16px">SEMESTER I · SUBJECTS</div>'+(b.semesters||[]).map(sm=>`<button class="tree-btn ${params().semester===sm.id?'active':''}" data-m="${sm.id}"><span>${esc(sm.title)}</span><span>${sm.subjects?.length||0}</span></button><div class="tree-sub">${(sm.subjects||[]).map(x=>`<button class="tree-btn ${active===x.id?'active':''}" data-s="${x.id}"><span>${esc(x.title)}</span><small>${esc(x.code||'')}</small></button>`).join('')}</div>`).join('');$$('[data-b]',T).forEach(x=>x.onclick=()=>go({branch:x.dataset.b,semester:'',subject:'',unit:'',topic:'',q:''}));$$('[data-m]',T).forEach(x=>x.onclick=()=>go({branch:b.id,semester:x.dataset.m,subject:'',unit:'',topic:'',q:''}));$$('[data-s]',T).forEach(x=>x.onclick=()=>{const s=subject(b,x.dataset.s);if(s)go({branch:b.id,semester:s.semester.id,subject:s.id,unit:'',topic:'',q:''})})}
+function pack(def,ex,rule,example,points,mistakes,short,long,mcq){return{definition:def,explanation:ex,formula:rule,example,important:points,mistakes,short,long,mcq}}
+const M={
+'determinant':pack('A determinant is a single numerical value associated with a square matrix. It is used to test singularity and to solve systems of linear equations.',['A determinant is defined only for a square matrix.','For a 2×2 matrix, multiply the main diagonal and subtract the product of the other diagonal.','For order 3 and above, expansion can be performed using minors and cofactors.','If the determinant is zero, the matrix is singular; if it is non-zero, the matrix is non-singular.'],'For A=[[a,b],[c,d]], |A|=ad−bc. For a 3×3 determinant, expansion by minors/cofactors may be used.','Let A=[[2,3],[1,4]]. Then |A|=(2×4)−(3×1)=5. Since 5≠0, A is non-singular.',['Know determinant properties: equal/proportional rows or columns give zero; interchanging two rows/columns changes the sign.','Check the order before applying a determinant method.','Connect determinants with Cramer’s rule and inverse matrices.'],['Define determinant.','State four properties of determinants.','What is the condition for a matrix to be non-singular?'],['Find a determinant of order 2 and explain each step.','Explain important properties of determinants with a suitable example.'],[['A determinant is defined for','A square matrix','Only a row matrix','Only a column matrix','Any graph'],['If det(A)=0, A is','Singular','Identity','Orthogonal','Unit']]),
+'cramer':pack('Cramer’s Rule is a determinant-based method for solving simultaneous linear equations when the coefficient determinant is non-zero.',['Write all equations in standard form and identify the coefficient matrix.','Calculate D from the coefficient matrix.','Replace the x, y and z coefficient columns one at a time by the constants to obtain Dₓ, Dᵧ and D_z.','Divide each replaced determinant by D and verify the solution in the original equations.'],'x=Dₓ/D, y=Dᵧ/D, z=D_z/D, provided D≠0.','For any 3×3 system, first calculate D, then Dₓ, Dᵧ and D_z. The final values are the corresponding determinant ratios.',['Always keep the column order unchanged.','A unique solution requires D≠0.','Verification helps catch determinant-sign errors.'],['State Cramer’s Rule.','What is the condition for a unique solution?'],['Solve a three-variable system using Cramer’s Rule and show D, Dₓ, Dᵧ and D_z.'],[['Cramer’s Rule mainly uses','Determinants','Graphs only','Differentiation','Integration'],['A unique solution by Cramer’s Rule requires','D≠0','D=0','D<0 only','No condition']]),
+'matrix-algebra':pack('Matrix algebra deals with addition, subtraction, scalar multiplication and multiplication of matrices.',['Addition and subtraction require equal orders.','Scalar multiplication multiplies every element by the scalar.','For AB to exist, columns of A must equal rows of B.','Matrix multiplication is generally not commutative: AB may not equal BA.'],'For A(m×n) and B(n×p), AB is m×p.','If A=[[1,2],[3,4]] and B=[[5,6],[7,8]], AB=[[19,22],[43,50]]. Each entry is obtained by row-by-column multiplication.',['Check matrix dimensions before multiplying.','Keep row-by-column multiplication order correct.','Do not assume AB=BA.'],['When can two matrices be added?','When their orders are the same.','When both are square only.','When their determinants are equal.'],['Explain matrix multiplication with a 2×2 worked example.','Discuss the main algebraic operations on matrices.'],[['Matrix multiplication uses','Row × column','Row + row only','Column − column only','Determinants only']]),
+'adjoint-inverse':pack('The transpose interchanges rows and columns. The adjoint (adjugate) is the transpose of the cofactor matrix, and the inverse exists for a non-singular square matrix.',['Find the transpose by interchanging rows and columns.','For the adjoint method, calculate cofactors, form the cofactor matrix and transpose it.','The inverse is obtained by dividing the adjoint by the determinant.','The inverse satisfies AA⁻¹=I for a non-singular square matrix.'],'A⁻¹=adj(A)/|A|, provided |A|≠0.','For a 2×2 matrix [[a,b],[c,d]], A⁻¹=1/(ad−bc)[[d,−b],[−c,a]], when ad−bc≠0.',['Check the determinant before calculating an inverse.','Use correct signs for cofactors.','Verify by multiplication with the original matrix.'],['Define transpose and adjoint.','State the condition for existence of an inverse.'],['Find the inverse of a 2×2 matrix using the adjoint method.','Explain transpose, cofactors, adjoint and inverse in sequence.'],[['The inverse of A exists when','|A|≠0','|A|=0','A has one row','A is empty']]),
+'position-vector':pack('A position vector locates a point with respect to a chosen origin. In Cartesian coordinates it is written using unit vectors.',['Choose an origin O as reference.','For point P(x,y,z), the position vector is OP=x i + y j + z k.','Its magnitude gives the distance OP from the origin.','Position vectors are useful for describing points, displacement and geometry.'],'|r|=√(x²+y²+z²).','For P(2,−1,3), r=2i−j+3k and |r|=√14.',['Keep coordinate signs correct.','Distinguish a position vector from a scalar distance.'],['Define position vector.','Write the position vector of (x,y,z).'],['Explain position vector and calculate the magnitude for a given point.'],[['A position vector is measured from','A chosen origin','Only the x-axis','Any random point']]),
+'scalar-product':pack('The scalar product, or dot product, of two vectors produces a scalar and measures the component of one vector along another.',['Multiply corresponding components and add them for Cartesian vectors.','Geometrically, the dot product equals the product of magnitudes and cosine of the included angle.','A zero dot product indicates perpendicular non-zero vectors.'],'a·b=|a||b|cosθ = a₁b₁+a₂b₂+a₃b₃.','For a=i+2j and b=2i−j, a·b=2−2=0, so the vectors are perpendicular.',['Check whether the answer should be scalar or vector.','Use the included angle consistently.'],['Define scalar product.','State the condition for perpendicular vectors.'],['Explain dot product in component and geometric forms.'],[['a·b is a','Scalar','Vector','Matrix only','Point']]),
+'vector-product':pack('The vector product, or cross product, of two vectors produces a vector perpendicular to the plane containing the two vectors.',['Use the determinant form with i, j and k unit vectors.','The magnitude equals |a||b|sinθ.','Direction follows the right-hand rule.','The cross product is anti-commutative: a×b=−(b×a).'],'|a×b|=|a||b|sinθ.','For a=i and b=j, a×b=k. For parallel vectors θ=0, so the cross product is zero.',['Remember the right-hand rule.','Cross product gives a vector, not a scalar.'],['Define vector product.','What is the cross product of parallel vectors?'],['Explain magnitude, direction and properties of the vector product.'],[['a×b is a','Vector','Scalar','Number only','Matrix']]),
+'limit':pack('A limit describes the value a function approaches as its input approaches a specified point.',['Limits can be evaluated by direct substitution when the function is well behaved.','If direct substitution gives an indeterminate form such as 0/0, algebraic simplification or factorisation may be needed.','A limit describes nearby behaviour; it need not equal the function value at the point.'],'lim(x→a) f(x)=L means f(x) approaches L as x approaches a.','For lim(x→2)(x²+3x)=4+6=10 by direct substitution.',['Check the approach value and the function carefully.','Do not confuse a limit with an ordinary substitution when the expression is undefined.'],['Define limit.','What is an indeterminate form?'],['Evaluate a simple algebraic limit and explain each step.'],[['A limit describes','Approaching behaviour','Only the final value','A matrix inverse']]),
+'continuity':pack('A function is continuous at x=a when its left-hand limit, right-hand limit and function value agree.',['Calculate the left-hand and right-hand limits where required.','Check whether both one-sided limits are equal.','Compare the common limit with f(a).','If all three agree, the function is continuous at a.'],'Continuity at a requires lim(x→a)f(x)=f(a), with the two-sided limit existing.','For a polynomial, continuity holds at every real number because its value changes without a jump, break or hole.',['Use the point a consistently.','For piecewise functions, check both sides separately.'],['State the condition for continuity.','What is a discontinuity?'],['Test continuity of a simple piecewise function at a point.'],[['For continuity, the limit must equal','f(a)','0 always','The derivative only']]),
+'differentiation':pack('Differentiation finds the derivative of a function. Geometrically it gives the slope of the tangent; physically it often represents an instantaneous rate of change.',['Start from the derivative definition when first-principle differentiation is required.','Use standard derivatives for common algebraic, trigonometric, exponential and logarithmic functions.','Apply product, quotient or chain rules when more than one function is involved.','Interpret the derivative with its variable and units.'],'f′(x)=lim(h→0)[f(x+h)−f(x)]/h; common rules include d(xⁿ)/dx=nxⁿ⁻¹, d(sin x)/dx=cos x and d(eˣ)/dx=eˣ.','For f(x)=x³, f′(x)=3x² using the power rule. At x=2, the instantaneous slope is 12.',['Keep the differentiation variable clear.','Apply chain rule to composite functions.','Do not lose negative signs or powers.'],['Define derivative.','Write the derivative of xⁿ.'],['Differentiate a function using first principle.','Explain product, quotient and chain rules with examples.'],[['The derivative represents','Instantaneous rate of change','Only area','A constant always']]),
+'slope':pack('The slope of a line measures its inclination and equals the change in y divided by the change in x.',['Take two points on the line.','Subtract y-coordinates and x-coordinates in the same order.','Interpret positive, negative, zero and undefined slopes geometrically.','Use the slope with the appropriate straight-line equation.'],'m=(y₂−y₁)/(x₂−x₁).','For (1,2) and (3,6), m=(6−2)/(3−1)=2.',['Keep coordinate order consistent.','A vertical line has undefined slope.'],['Define slope.','Find the slope through two given points.'],['Explain different cases of slope with diagrams or examples.'],[['Slope is','Δy/Δx','Δx/Δy always','y+x']]),
+'probability':pack('Probability measures the likelihood of an event. For equally likely outcomes, it is the ratio of favourable outcomes to total outcomes.',['Define the sample space and event before calculating.','For equally likely outcomes, count favourable and total outcomes.','Use addition and multiplication rules according to whether events overlap or depend on one another.','Probability lies between 0 and 1 inclusive.'],'P(A)=favourable outcomes/total outcomes for equally likely outcomes; 0≤P(A)≤1.','For a fair die, P(even)=3/6=1/2 because {2,4,6} are favourable among six outcomes.',['Clearly define the event.','Do not double-count outcomes in addition problems.','Check that a probability is between 0 and 1.'],['Define probability.','What is the sample space?'],['Solve a simple probability problem using the appropriate theorem.'],[['Probability always lies between','0 and 1','−1 and 1 only','1 and 10']])};
+function notesFor(s,u,t){if(t.notes)return t.notes;const title=t.title,low=(s.title+' '+u.title+' '+title).toLowerCase();for(const k of Object.keys(M))if(low.includes(k))return M[k];if(/artificial intelligence|fundamentals of artificial|\bai\b/.test(low))return aiNotes(title,low);if(/python|programming logic|computational thinking/.test(low))return pyNotes(title,low);if(/electrical|electronics|circuit|resistor|capacitor|inductor|magnetic|semiconductor|diode|transistor/.test(low))return eeNotes(title,low);return generic(title,s)}
+function aiNotes(title,low){let d='This topic is an Artificial Intelligence concept from the SBTE Bihar Admission Session 2026 syllabus.',ex=['Start with the definition and identify the input, process and output involved.','Understand the basic workflow before learning tools or examples.','Relate the concept to engineering or everyday applications.','Check results and sources where the topic involves AI-generated information.'],f='Concept → Input/Data → Processing/Model → Output → Evaluation',e='Example workflow: provide a suitable input, apply the relevant AI method or tool, inspect the output, and verify whether it is accurate and appropriate for the task.';if(/machine learning/.test(low)){d='Machine Learning is a part of AI in which systems learn patterns from data to make predictions or decisions.';ex=['Supervised learning uses labelled examples.','Unsupervised learning finds patterns in data without target labels.','Reinforcement learning learns through interaction and feedback or rewards.','A typical workflow includes data collection, preparation, training, testing and evaluation.'];f='Training data → Model learning → Testing data → Evaluation → Prediction';e='A model can be trained on historical examples and then evaluated on separate test data to see how well it generalises.'}else if(/computer vision/.test(low)){d='Computer Vision enables machines to analyse digital images or video for tasks such as recognition, detection and inspection.';ex=['Images are represented using pixels and numerical values.','Pre-processing can improve or standardise an image.','Detection identifies objects and may locate them with bounding boxes.','Industrial uses include inspection, measurement, monitoring and quality control.'];f='Image/Video → Pre-processing → Pattern analysis → Detection/Recognition → Result';e='An inspection system receives a product image, analyses visual patterns, identifies a target object or defect, and produces a result for an operator.'}else if(/ocr/.test(low)){d='Optical Character Recognition converts visible text in an image or scanned document into machine-readable text.';ex=['The system receives an image containing characters.','Image processing separates or enhances text regions.','Recognition estimates the characters.','The extracted text should be checked because image quality can cause errors.'];f='Image → Text region detection → Character recognition → Editable text → Verification';e='A scanned maintenance log can be processed by OCR to create searchable text, after which an engineer checks names, numbers and technical values.'}else if(/natural language|tokenization|nlp/.test(low)){d='Natural Language Processing deals with computational processing and interpretation of human language.';ex=['Text is divided into manageable units such as tokens.','Systems can analyse patterns, context and relationships in text.','Applications include translation, search, summarisation and chat systems.','Language ambiguity means outputs should be reviewed for important decisions.'];f='Text → Tokenization → Language processing → Interpretation → Output';e='A sentence can be tokenised into words or subword units before a language system processes the sequence and produces an output.'}else if(/prompt engineering|zero-shot/.test(low)){d='Prompt engineering is the practice of writing clear instructions and useful context for a generative AI system.';ex=['State the task clearly.','Provide relevant context and constraints.','Specify the expected output format when useful.','Zero-shot prompting asks the system to perform a task without giving worked examples.'];f='Task + Context + Constraints + Output format → Prompt → AI response → Review';e='Instead of asking “Explain this”, specify the topic, student level, desired structure and constraints so the response is easier to evaluate and use.'}else if(/hallucination|bias|responsible|privacy|copyright/.test(low)){d='Responsible AI focuses on using AI systems with attention to accuracy, bias, privacy, copyright, transparency and human oversight.';ex=['AI outputs can contain incorrect or unsupported statements.','Bias can arise from data, system design or use context.','Sensitive information should not be shared unnecessarily.','Important claims should be checked against reliable sources and copyright requirements.'];f='Generate → Verify → Protect data → Check rights → Human review';e='For a technical report, treat AI output as a draft: verify important facts, protect confidential information, and respect copyright and attribution requirements.'}return pack(d,ex,f,e,['Know the terminology and workflow.','Use one real-world engineering example.','Verify important AI outputs rather than accepting them automatically.','Write limitations and responsible-use points in long answers.'],['Confusing AI, ML and DL.','Treating generated text as automatically correct.','Ignoring privacy, bias or copyright considerations.'],[`Define ${title}.`,`State the main workflow or principle of ${title}.`,`Give one application of ${title}.`],[`Explain ${title} with a workflow and suitable example.`,`Discuss applications, limitations and responsible-use considerations of ${title}.`],[[`${title} is best understood through`,'Concept + workflow + example','Memorisation only','Ignoring limitations','None'],['An important AI output should be','Reviewed and verified','Accepted blindly','Hidden from review','Always assumed correct']])}
+function pyNotes(title,low){let d='Python is a high-level programming language used in the SBTE 2026 course to develop computational thinking and simple engineering automation.',ex=['Break a problem into inputs, processing steps and outputs.','Choose variables and suitable data types.','Use operators and control structures to express the logic.','Test the program with normal and boundary inputs.'],f='Input → Processing / Logic → Output',e='For an area calculator, accept length and breadth, calculate area=l×b, and display the result with a clear label.';if(/variable|data type|type casting/.test(low)){d='A variable is a named reference used to store a value. Python commonly uses int, float, str and bool for basic data.';ex=['Assign a value to a variable using =.','Use int for whole numbers, float for decimal values, str for text and bool for True/False values.','Use explicit casting such as int(), float() or str() when conversion is needed.','Choose types according to the data being processed.'];f='int, float, str, bool; explicit casting: int(x), float(x), str(x), bool(x)';e='If age is entered with input(), it is initially text. Converting it with int(input()) allows numeric comparison and calculation.'}else if(/operator/.test(low)){d='Python operators perform arithmetic, comparisons, logical combinations and assignments.';ex=['Arithmetic operators calculate numeric expressions.','Relational operators compare values and produce Boolean results.','Logical operators combine conditions.','Assignment operators store or update values.'];f='Arithmetic: +, -, *, /, //, %, **; comparison: ==, !=, >, <, >=, <=; logical: and, or, not';e='For a safety threshold, temperature > 80 can be used as a Boolean condition before triggering an alert.'}else if(/input|output|f-string/.test(low)){d='Python input/output allows a program to receive values and present readable results. input() returns text, while f-strings format values inside strings.';ex=['Use input() to capture user data.','Convert numeric input explicitly when calculation is required.','Use print() for output.','Use f"...{value}..." for readable formatted output.'];f='name=input("Name: "); value=float(input("Value: ")); print(f"Value = {value}")';e='A calculator can read two numbers with input(), convert them to float, calculate the required quantity and print the answer using an f-string.'}else if(/if|conditional|decision/.test(low)){d='Conditional statements allow a Python program to choose different actions according to Boolean conditions.';ex=['if executes a block when its condition is true.','if-else provides two alternatives.','Nested if statements place a decision inside another decision.','Conditions can combine comparison and logical operators.'];f='if condition: action; else: alternative';e='For a threshold alarm, if pressure > limit, display an alert; otherwise display that the value is within the allowed range.'}else if(/loop|for|while|range/.test(low)){d='Loops repeat a block of code. Python for loops are useful for known sequences, while loops continue while a condition remains true, and range() creates integer sequences.';ex=['Use for when iterating over a sequence or known range.','Use while when repetition depends on a condition.','range(start, stop, step) controls integer sequences.','Ensure while-loop conditions eventually change to avoid an unintended infinite loop.'];f='for i in range(start, stop): ... ; while condition: ...';e='A conversion table can use for i in range(1,6) to calculate five related values without writing the same calculation five times.'}else if(/list/.test(low)){d='A Python list stores an ordered collection of values and can be modified after creation.';ex=['Create a list with square brackets.','Use zero-based indexing to access elements.','append() adds an item to the end.','Loops can process all items to calculate totals, minimum, maximum or average.'];f='values=[10,20,30]; values.append(40); first=values[0]';e='Sensor readings can be stored in a list and processed to find minimum, maximum and average values.'}return pack(d,ex,f,e,['Write algorithmic steps before coding.','Use meaningful variable names.','Test with different inputs.','Indent Python blocks correctly.'],['Mixing strings and numbers without conversion.','Using the wrong indentation.','Creating an infinite while loop.'],[`Define ${title}.`,`Write one Python statement related to ${title}.`,`Give one engineering application of ${title}.`],[`Explain ${title} with a Python example and output.`,`Develop a simple engineering problem using ${title}.`],[[`${title} is mainly used for`,'Computational problem solving','Only drawing','Only networking','None']])}
+function eeNotes(title,low){let d='This electrical/electronic topic is included in the SBTE 2026 first-semester curriculum.',ex=['Identify the physical quantity and its SI unit.','Understand the component, law or circuit principle involved.','Draw a simple labelled representation where appropriate.','Apply the relevant equation and check units.'],f='Use the standard electrical relation relevant to the given quantity.',e='Write the known values, choose the correct law, substitute using consistent units, calculate and state the result.';if(/ohm/.test(low)){d='Ohm’s law states that, for a conductor under constant physical conditions, current is proportional to applied voltage.';ex=['Voltage V is the potential difference across the element.','Current I is the charge flow rate.','Resistance R opposes current.','The law provides a basic relation for many circuit calculations.'];f='V=IR; I=V/R; R=V/I';e='If V=12 V and R=6 Ω, I=12/6=2 A.'}else if(/resistor/.test(low)){d='A resistor is a passive component that provides electrical resistance and is used to control current and develop voltage drops.';ex=['Resistance is measured in ohms.','Resistors may be fixed or variable.','Temperature can affect resistance.','Series and parallel combinations change the equivalent resistance.'];f='Series: Rₑ=R₁+R₂+…; Parallel: 1/Rₑ=1/R₁+1/R₂+…';e='Two 4 Ω resistors in series give 8 Ω; in parallel they give 2 Ω.'}else if(/capacitor/.test(low)){d='A capacitor stores electrical energy in an electric field and opposes changes in voltage.';ex=['Capacitance depends on geometry and dielectric material.','A capacitor stores charge Q and energy.','Capacitors combine differently in series and parallel.','In AC circuits, capacitive reactance depends on frequency.'];f='C=Q/V; Xc=1/(2πfC); E=½CV²';e='Increasing frequency reduces capacitive reactance because Xc is inversely proportional to frequency.'}else if(/inductor/.test(low)){d='An inductor stores energy in a magnetic field and opposes changes in current.';ex=['Inductance is measured in henry.','Self-inductance relates changing current to induced voltage.','Mutual inductance describes magnetic coupling between coils.','Inductive reactance increases with frequency.'];f='XL=2πfL; E=½LI²';e='For a fixed inductance, increasing frequency increases XL, so the inductor offers greater opposition to AC.'}else if(/magnetic|electromagnet/.test(low)){d='A magnetic circuit describes the path followed by magnetic flux and uses quantities analogous to electric circuits.';ex=['Magnetic flux is the total magnetic field passing through an area.','MMF produces magnetic flux.','Reluctance opposes magnetic flux.','Hysteresis describes the magnetic response associated with repeated magnetisation.'];f='MMF=NI; reluctance ℜ=l/(μA); Φ=MMF/ℜ';e='A coil with N turns carrying current I produces MMF NI, which establishes flux through the magnetic path.'}else if(/semiconductor|diode|p-n/.test(low)){d='A semiconductor has controllable electrical conductivity and forms the basis of many electronic devices. A p-n junction is formed by joining p-type and n-type regions.';ex=['Pure semiconductor behaviour changes when suitable impurities are introduced.','A p-n junction develops a depletion region near the junction.','A diode primarily allows current in one direction under suitable bias conditions.','Diodes are used in rectification, switching and protection applications.'];f='Diode operation depends on forward and reverse bias; use the characteristic relation or circuit model specified in the question.';e='In a simple rectifier, a diode conducts during the appropriate part of an AC cycle and helps produce a unidirectional output.'}return pack(d,ex,f,e,['Know SI units and symbols.','Draw clear circuit or block diagrams.','State assumptions and operating conditions.','Show substitutions in numerical problems.'],['Confusing voltage and current.','Ignoring polarity or direction.','Using AC formulas for a DC-only question without checking conditions.'],[`Define ${title}.`,`State the main law or principle of ${title}.`,`Give one application of ${title}.`],[`Explain ${title} with a labelled diagram and suitable example.`,`Discuss the working, formulae and applications of ${title}.`],[[`${title} should be studied with`,'Concept + circuit/diagram + calculation','Only memorisation','No units','None']])}
+function generic(title,s){return pack(`${title} is included in the SBTE Bihar Admission Session 2026 first-semester curriculum for ${s.title}.`,[`Meaning: understand the exact terms used in ${title}.`,`Principle: identify the rule, process or relationship behind the topic.`,`Method: learn the steps in the order used to solve or explain the concept.`,`Application: connect the topic to a suitable engineering, computing or practical example.`],'Use the standard definition, law, formula or procedure stated in the course material for the exact question.','Start with the given information, identify the required result, apply the relevant principle step-by-step and finish with a clear answer or conclusion.',['Learn the definition and keywords.','Write units, conditions and assumptions where applicable.','Use a labelled diagram or flowchart when useful.','Practise short and long-answer questions.'],['Skipping definitions or conditions.','Using a formula without identifying its symbols.','Writing only a final result without working.'],[`Define ${title}.`,`State the main principle of ${title}.`,`Give one application of ${title}.`],[`Explain ${title} in detail with an example.`,`Describe the principle, steps and applications of ${title}.`],[[`${title} is best learned through`,'Concept + example + practice','Memorisation only','Skipping examples','None']])}
+function visual(title,s){let f=['Concept','Principle','Example','Application'];const l=(s.title+' '+title).toLowerCase();if(/math|calculus|algebra|geometry|probability|statistics/.test(l))f=['Given','Formula / Rule','Calculation','Result'];if(/python|computer|internet|ai|ict/.test(l))f=['Input','Process','Tool / Logic','Output'];return `<div class="diagram-box"><div class="diagram-title">VISUAL SUMMARY · ${esc(title)}</div><div class="diagram"><div class="diagram-row">${f.map((x,i)=>(i?'<span class="arrow">→</span>':'')+`<div class="diagram-node">${esc(x)}</div>`).join('')}</div></div><p class="diagram-caption">Use this as a quick memory map; the detailed lesson contains the explanation.</p></div>`}
+function noteHtml(b,s,u,t){const n=notesFor(s,u,t),k=key(b,s,u,t),done=!!state.done[k],saved=!!state.saved[k],li=a=>(a||[]).map(x=>`<li>${esc(x)}</li>`).join('');return `<article class="notes"><div class="section-kicker">${esc(s.code)} · ${esc(u.title)}</div><h1>${esc(t.title)}</h1><p class="content-lead">${esc(s.title)} · ${esc(b.title)} · SBTE Bihar · Admission Session 2026</p><div class="note-toolbar no-print"><button class="action-btn ${done?'primary':''}" data-done>${done?'✓ Completed':'Mark completed'}</button><button class="action-btn ${saved?'primary':''}" data-save>${saved?'★ Bookmarked':'☆ Bookmark'}</button><button class="action-btn" data-print>Download PDF</button></div><div class="definition"><b>Simple Definition</b><p>${esc(n.definition)}</p></div><h2>1. Concept Explanation</h2><ol>${li(n.explanation)}</ol>${visual(t.title,s)}<h2>2. Formula / Rule / Key Principle</h2><div class="formula">${esc(n.formula)}</div><h2>3. Worked Example / Application</h2><div class="example"><b>Step-by-step</b><p>${esc(n.example)}</p></div><h2>4. Important Points</h2><ul>${li(n.important)}</ul><h2>5. Common Mistakes</h2><ul>${li(n.mistakes)}</ul><div class="exam-box"><h2>6. Exam Practice</h2><b>Short Questions</b><ul>${li(n.short)}</ul><b>Long Questions</b><ul>${li(n.long)}</ul>${(n.mcq||[]).map((q,i)=>`<div class="mcq"><b>MCQ ${i+1}. ${esc(q[0])}</b>${q.slice(1).map((o,j)=>`<label>${String.fromCharCode(65+j)}. ${esc(o)}</label>`).join('')}</div>`).join('')}</div><h2>7. Quick Revision</h2><ul><li>Definition → principle → formula/rule → example → application.</li><li>Revise keywords, conditions and units.</li><li>Practise at least one exam-style question.</li></ul></article>`}
+function printDoc(title,meta,items){const old=C.innerHTML;document.body.classList.add('print-mode');C.innerHTML=`<article class="notes print-document"><div class="print-cover"><img src="/assets/princexmahto-logo.svg" alt="PrinceXmahto logo"><div class="section-kicker">STUDY MATERIALS · SBTE BIHAR · ADMISSION SESSION 2026</div><h1>${esc(title)}</h1><p>${esc(meta)}</p><div class="print-cover-line"></div><p class="print-small">Detailed notes · Exam practice · Quick revision</p></div>${items.map((x,i)=>{const n=notesFor(x.s,x.u,x.t);return `<section class="print-topic"><div class="section-kicker">TOPIC ${i+1} · ${esc(x.s.code)} · ${esc(x.u.title)}</div><h2>${esc(x.t.title)}</h2><div class="definition"><b>Simple Definition</b><p>${esc(n.definition)}</p></div><h3>Concept Explanation</h3><ol>${(n.explanation||[]).map(v=>`<li>${esc(v)}</li>`).join('')}</ol>${visual(x.t.title,x.s)}<h3>Formula / Rule / Key Principle</h3><div class="formula">${esc(n.formula)}</div><h3>Worked Example / Application</h3><div class="example"><p>${esc(n.example)}</p></div><h3>Important Points</h3><ul>${(n.important||[]).map(v=>`<li>${esc(v)}</li>`).join('')}</ul><h3>Common Mistakes</h3><ul>${(n.mistakes||[]).map(v=>`<li>${esc(v)}</li>`).join('')}</ul><div class="exam-box"><h3>Exam Practice</h3><b>Short Questions</b><ul>${(n.short||[]).map(v=>`<li>${esc(v)}</li>`).join('')}</ul><b>Long Questions</b><ul>${(n.long||[]).map(v=>`<li>${esc(v)}</li>`).join('')}</ul>${(n.mcq||[]).map((q,j)=>`<div class="mcq"><b>MCQ ${j+1}. ${esc(q[0])}</b>${q.slice(1).map((o,z)=>`<label>${String.fromCharCode(65+z)}. ${esc(o)}</label>`).join('')}</div>`).join('')}</div></section>`}).join('')}</article>`;setTimeout(()=>{print();C.innerHTML=old;document.body.classList.remove('print-mode');render()},100)}
+function topicPrint(b,s,u,t){printDoc(t.title,`${s.title} · ${b.title}`,[{s,u,t}])}
+function unitPrint(b,s,u){printDoc(u.title,`${s.title} · ${b.title}`,(u.topics||[]).map(v=>({s,u,t:topic(v)})))}
+function subjectPrint(b,s){const all=[];(s.units||[]).forEach(u=>(u.topics||[]).forEach(v=>all.push({s,u,t:topic(v)})));printDoc(s.title,`${b.title} · Course Code ${s.code||'—'}`,all)}
+function home(){crumbs([{t:'Study Materials'},{t:'Diploma'}]);tree('');C.innerHTML=`<div class="section-head"><div><div class="section-kicker">DIPLOMA · 1ST YEAR · SBTE BIHAR · 2026</div><h1>Choose your branch</h1><p>Start with your branch, then open Semester I → Subject → Unit → Topic.</p></div></div><div class="branch-grid">${Y.branches.map(b=>`<button class="branch-card" data-open-branch="${esc(b.id)}"><strong>${esc(b.title)}</strong><span>Semester I →</span></button>`).join('')}</div>`;$$('[data-open-branch]').forEach(x=>x.onclick=()=>go({branch:x.dataset.openBranch,semester:'sem1',subject:'',unit:'',topic:'',q:''}))}
+function branchPage(b){const ss=subjects(b);crumbs([{t:'Study Materials'},{t:'Diploma'},{t:b.title}]);tree('');C.innerHTML=`<div class="section-head"><div><div class="section-kicker">DIPLOMA · 1ST YEAR · ADMISSION SESSION 2026</div><h1>${esc(b.title)}</h1><p>Semester I · ${ss.length} subjects · Choose a subject.</p></div></div><div class="subject-grid">${ss.map(x=>`<button class="subject-card" data-subject="${esc(x.id)}"><span>${esc(x.category||'COURSE')} · ${esc(x.code||'')}</span><h2>${esc(x.title)}</h2><p>${x.units?.length||0} units · topic-wise detailed notes · PDF ready</p><b>Open subject →</b></button>`).join('')}</div>`;$$('[data-subject]').forEach(x=>x.onclick=()=>{const s=subject(b,x.dataset.subject);if(s)go({branch:b.id,semester:s.semester.id,subject:s.id,unit:'',topic:'',q:''})})}
+function subjectPage(b,s){crumbs([{t:'Study Materials'},{t:'Diploma'},{t:b.title,h:`?branch=${b.id}`},{t:s.title}]);tree(s.id);C.innerHTML=`<div class="section-head"><div><div class="section-kicker">${esc(s.code)} · SEMESTER I · ADMISSION SESSION 2026</div><h1>${esc(s.title)}</h1><p>${esc(b.title)} · ${(s.units||[]).length} units · Detailed topic notes</p></div><button class="action-btn primary" id="subjectPdf">Download Subject PDF</button></div><div class="unit-grid">${(s.units||[]).map((u,i)=>`<div class="unit-card"><span>UNIT ${i+1}</span><h2>${esc(u.title)}</h2><p>${u.topics?.length||0} topics · detailed notes · exam practice</p><button class="action-btn mini" data-unit="${esc(u.id)}">Open Unit →</button> <button class="action-btn mini" data-unit-pdf="${esc(u.id)}">Unit PDF</button></div>`).join('')}</div>`;$('#subjectPdf').onclick=()=>subjectPrint(b,s);$$('[data-unit]').forEach(x=>x.onclick=()=>go({branch:b.id,semester:s.semester.id,subject:s.id,unit:x.dataset.unit,topic:'',q:''}));$$('[data-unit-pdf]').forEach(x=>x.onclick=()=>{const u=unit(s,x.dataset.unitPdf);if(u)unitPrint(b,s,u)})}
+function unitPage(b,s,u){crumbs([{t:'Study Materials'},{t:'Diploma'},{t:b.title,h:`?branch=${b.id}`},{t:s.title,h:`?branch=${b.id}&semester=${s.semester.id}&subject=${s.id}`},{t:u.title}]);tree(s.id);C.innerHTML=`<div class="section-head"><div><div class="section-kicker">${esc(s.code)} · ${esc(s.title)}</div><h1>${esc(u.title)}</h1><p>Open a topic for the complete lesson, example and exam practice.</p></div><button class="action-btn primary" id="unitPdf">Download Unit PDF</button></div><div class="topic-grid">${(u.topics||[]).map(v=>{const t=topic(v);return `<button class="topic-card" data-topic="${esc(t.id)}"><span>TOPIC</span><h3>${esc(t.title)}</h3><p>Detailed concept · formula/rule · example · exam practice</p></button>`}).join('')}</div>`;$('#unitPdf').onclick=()=>unitPrint(b,s,u);$$('[data-topic]').forEach(x=>x.onclick=()=>go({branch:b.id,semester:s.semester.id,subject:s.id,unit:u.id,topic:x.dataset.topic,q:''}))}
+function topicPage(b,s,u,t){crumbs([{t:'Study Materials'},{t:'Diploma'},{t:b.title,h:`?branch=${b.id}`},{t:s.title,h:`?branch=${b.id}&semester=${s.semester.id}&subject=${s.id}`},{t:u.title,h:`?branch=${b.id}&semester=${s.semester.id}&subject=${s.id}&unit=${u.id}`},{t:t.title}]);tree(s.id);C.innerHTML=noteHtml(b,s,u,t);$('[data-done]').onclick=()=>{const k=key(b,s,u,t);state.done[k]=!state.done[k];save();topicPage(b,s,u,t)};$('[data-save]').onclick=()=>{const k=key(b,s,u,t);state.saved[k]=!state.saved[k];save();topicPage(b,s,u,t)};$('[data-print]').onclick=()=>topicPrint(b,s,u,t)}
+function searchResults(q){const hits=[];Y.branches.forEach(b=>subjects(b).forEach(s=>(s.units||[]).forEach(u=>(u.topics||[]).forEach(v=>{const t=topic(v),hay=[b.title,s.title,s.code,u.title,t.title].join(' ').toLowerCase();if(hay.includes(q.toLowerCase()))hits.push({b,s,u,t})}))));crumbs([{t:'Study Materials'},{t:'Search'}]);tree('');C.innerHTML=`<div class="section-head"><div><div class="section-kicker">GLOBAL SEARCH</div><h1>Results for “${esc(q)}”</h1><p>${hits.length} matching topics.</p></div></div><div class="topic-grid">${hits.slice(0,100).map(x=>`<button class="topic-card" data-hit="${esc(x.b.id+'|'+x.s.id+'|'+x.u.id+'|'+x.t.id)}"><span>${esc(x.s.code)} · ${esc(x.u.title)}</span><h3>${esc(x.t.title)}</h3><p>${esc(x.b.title)} · Open detailed notes →</p></button>`).join('')||'<div class="empty"><h3>No results</h3><p>Try a course code, subject, unit or topic name.</p></div>'}</div>`;$$('[data-hit]').forEach(x=>x.onclick=()=>{const [b,s,u,t]=x.dataset.hit.split('|');go({branch:b,semester:'sem1',subject:s,unit:u,topic:t,q:''})})}
+function render(){const p=params(),b=branch(p.branch);if(p.q){searchResults(p.q);return}if(!p.branch){home();return}const s=subject(b,p.subject);if(!s){branchPage(b);return}const u=unit(s,p.unit),t=u&&getTopic(u,p.topic);if(t)topicPage(b,s,u,t);else if(u)unitPage(b,s,u);else subjectPage(b,s)}
+if(S)S.addEventListener('keydown',e=>{if(e.key==='Enter'&&S.value.trim())go({q:S.value.trim(),branch:'',semester:'',subject:'',unit:'',topic:''})});window.addEventListener('popstate',render);render();
 })();

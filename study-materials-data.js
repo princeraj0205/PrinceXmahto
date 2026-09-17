@@ -25,7 +25,7 @@ const rich = {
     }, diagram:'determinant'
   },
   cramers:{
-    id:'cramers-rule', title:'Cramer’s Rule', type:'problem', keywords:'Cramer rule simultaneous equations',
+    id:'cramers-rule', title:'Cramer’s Rule', type:'problem', keywords:'Cramer rule simultaneous equations determinants',
     notes:{
       definition:'Cramer’s Rule is a determinant-based method for solving simultaneous linear equations when the coefficient determinant is non-zero.',
       explanation:[
@@ -102,7 +102,7 @@ const commonMath = {
   ]
 };
 
-const physics = {id:'physics',code:'2600102B',title:'Applied Physics – B',category:'ASC',units:units('physics',['Unit and Measurements','Simple Harmonic and Wave Motion','Electrostatics, Electromagnetism and Electric Current','Semiconductor Physics','Modern Physics']).map((u,i)=>({...u,title:`Unit ${i+1} — ${u.title.replace(/^Unit \d+ — /,'')}`}))};
+const physics = {id:'physics',code:'2600102B',title:'Applied Physics – B',category:'ASC',units:units('physics',['Unit and Measurements','Simple Harmonic and Wave Motion','Electrostatics, Electromagnetism and Electric Current','Semiconductor Physics','Modern Physics']).map((u,i)=>({...u,title:`Unit ${i+1} — ${u.title.replace(/^Unit \d+ — /,'')}`}));
 
 function subject(id,code,title,category,unitNames){ return {id,code,title,category,units:units(id,unitNames)}; }
 
@@ -121,7 +121,7 @@ const common = {
   mechFund: subject('mech-fund','2625103','Fundamentals of Mechanical Engineering','BEC',['Introduction to Thermodynamics','Internal Combustion Engine and Refrigeration','Engineering Materials','Manufacturing Processes and Machine Tools','Power Transmission']),
   mechanics: subject('mechanics','2625104','Engineering Mechanics','BEC',['Mechanics and Force System','Static Equilibrium','Friction','Centroid, Centre of Gravity and Moment of Inertia','Simple Lifting Machine']),
   basicEE: subject('basic-ee','2620104','Basic Electrical Engineering','PCC',['Basic Concepts of Electrical','Energy Storing Elements','Basics of D.C & A.C Circuits','Magnetic Circuits','Electromagnetism']),
-  elecWorkshop: subject('elec-workshop','2620105','Electrical and Electronics Workshop','PCC',[]),
+  elecWorkshop: subject('elec-workshop','2620105','Electrical and Electronics Workshop','BEC',[]),
   mechWorkshop: subject('mech-workshop','2625106','Mechanical Workshop','BEC',[])
 };
 
@@ -134,7 +134,7 @@ const branches = [
     common.ai,common.elecWorkshop,subject('ict','2618107','ICT Tools','BCC',['Word Processing','Spreadsheets','Presentation Tool','Basics of Internet']),common.constitution,common.oER
   ]}]},
   {id:'ee',title:'Electrical Engineering',code:'EE',semesters:[{id:'sem1',title:'Semester I',subjects:[commonMath,physics,common.basicEE,common.drawingCE,common.ai,common.elecWorkshop,common.sports,common.oER]}]},
-  {id:'elx',title:'Electronics Engineering',code:'ELX',semesters:[{id:'sem1',title:'Semester I',subjects:[commonMath,physics,common.chemB,common.mechanics,common.drawingCE,common.elecWorkshop,common.env]}]},
+  {id:'elx',title:'Electronics Engineering',code:'ELX',semesters:[{id:'sem1',title:'Semester I',subjects:[commonMath,physics,common.chemB,common.mechanics,common.drawingCE,{...common.elecWorkshop,category:'PCC'},common.env]}]},
   {id:'me',title:'Mechanical Engineering',code:'ME',semesters:[{id:'sem1',title:'Semester I',subjects:[commonMath,common.chemA,common.ai,common.communication,common.drawingME,common.env]}]}
 ];
 

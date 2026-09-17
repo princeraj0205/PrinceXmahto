@@ -1,63 +1,49 @@
 /* PX Study Materials - SBTE Bihar - Admission Session 2026 */
-(function () {
-  'use strict';
-
-  function topic(id, title) {
-    return { id: id, title: title, type: 'concept', notes: null };
-  }
-
-  function unit(id, title, topics) {
-    return { id: id, title: title, topics: topics.map(function (x, i) { return topic(id + '-t' + (i + 1), x); }) };
-  }
-
-  function subject(id, code, title, units) {
-    return { id: id, code: code, title: title, category: 'COURSE', units: units.map(function (x, i) { return unit(id + '-u' + (i + 1), 'Unit ' + (i + 1) + ' - ' + x, [x]); }) };
-  }
-
-  var math = {
-    id: 'math', code: '2600101', title: 'Basic Engineering Mathematics', category: 'ASC',
-    units: [
-      { id: 'math-u1', title: 'Unit 1 - Algebra', topics: [
-        topic('determinants', 'Determinants'), topic('cramers-rule', "Cramer's Rule"), topic('matrices', 'Matrices'), topic('vectors', 'Vectors'), topic('complex-numbers', 'Complex Numbers')
-      ]},
-      { id: 'math-u2', title: 'Unit 2 - Differential Calculus', topics: [topic('limits', 'Limits'), topic('continuity', 'Continuity'), topic('differentiation', 'Differentiation')] },
-      { id: 'math-u3', title: 'Unit 3 - Application of Differential Calculus', topics: [topic('successive-differentiation', 'Successive Differentiation'), topic('rolle-mvt', "Rolle's Theorem and Mean Value Theorem"), topic('maxima-minima', 'Maxima and Minima')] },
-      { id: 'math-u4', title: 'Unit 4 - Coordinate Geometry', topics: [topic('straight-line', 'Straight Line'), topic('circle', 'Circle'), topic('parabola', 'Parabola'), topic('ellipse', 'Ellipse'), topic('hyperbola', 'Hyperbola')] },
-      { id: 'math-u5', title: 'Unit 5 - Probability and Statistics', topics: [topic('probability', 'Probability'), topic('mean', 'Mean'), topic('median-mode', 'Median and Mode'), topic('variance-sd', 'Variance and Standard Deviation')] }
-    ]
-  };
-
-  var physics = subject('physics', '2600102B', 'Applied Physics - B', [
-    'Units and Measurements', 'Simple Harmonic and Wave Motion', 'Electrostatics, Electromagnetism and Electric Current', 'Semiconductor Physics', 'Modern Physics'
-  ]);
-  var electrical = subject('fund-ee', '2620103', 'Fundamentals of Electrical and Electronic Engineering', [
-    'Basic Electrical Parameters and Concepts', 'Fundamentals of D.C. and A.C. Circuits', 'Magnetic Circuits and Electromagnetic Induction', 'Basic Electronic Components', 'Overview of Digital Electronics'
-  ]);
-  var ai = subject('ai', '2600100', 'Introduction to Artificial Intelligence', [
-    'Introduction to IT Systems and Digital Technologies', 'Fundamentals of Artificial Intelligence', 'Core AI Applications - Computer Vision and NLP', 'Conversational AI and Generative Systems', 'Programming Logic and Computational Thinking using Python'
-  ]);
-  var ict = subject('ict', '2618107', 'ICT Tools', ['Word Processing', 'Spreadsheets', 'Presentation Tool', 'Basics of Internet']);
-  var constitution = subject('constitution', '2600007', 'Indian Constitution', ['Constitution and Preamble', 'Fundamental Rights and Directive Principles', 'Governance and Amendments']);
-  var oer = subject('oer', '2600009', 'Open Educational Resources (OER)', ['Open Educational Resources', 'Copyright and Open Licensing', 'Creative Commons Licenses']);
-  var communication = subject('communication', '2600104', 'Communication Skills (English)', ['Communication', 'Types of Communication', 'Reading Comprehension', 'Vocabulary and Grammar', 'Professional Writing']);
-  var chemistry = subject('chemistry', '2600103A', 'Applied Chemistry - A', ['Atomic Structure and Chemical Bonding and Solutions', 'Water', 'Engineering Materials', 'Chemistry of Fuel and Lubricants', 'Electrochemistry']);
-  var basicEE = subject('basic-ee', '2620104', 'Basic Electrical Engineering', ['Basic Concepts of Electrical', 'Energy Storing Elements', 'Basics of D.C. and A.C. Circuits', 'Magnetic Circuits', 'Electromagnetism']);
-  var drawing = subject('drawing', '2615105', 'Engineering Drawing and Graphics', ['Basic Elements of Drawing', 'Orthographic Projections', 'Isometric Projection', 'Free Hand Sketches of Engineering Elements', 'Basic Computer Aided Drafting', 'Advanced Computer Aided Drafting']);
-  var env = subject('environment', '2600006', 'Environmental Education and Sustainable Development', ['Ecosystem', 'Air and Water Pollution', 'Sustainability and Renewable Sources of Energy', 'Climate Change and Sustainable Development', 'Environmental Legislation and Sustainable Building Practices']);
-  var mechanics = subject('mechanics', '2625104', 'Engineering Mechanics', ['Mechanics and Force System', 'Static Equilibrium', 'Friction', 'Centroid, Centre of Gravity and Moment of Inertia', 'Simple Lifting Machine']);
-  var mechFund = subject('mech-fund', '2625103', 'Fundamentals of Mechanical Engineering', ['Introduction to Thermodynamics', 'Internal Combustion Engine and Refrigeration', 'Engineering Materials', 'Manufacturing Processes and Machine Tools', 'Power Transmission']);
-
-  var branches = [
-    { id: 'ce', title: 'Civil Engineering', code: 'CE', semesters: [{ id: 'sem1', title: 'Semester I', subjects: [math, chemistry, mechFund, communication, drawing, env] }] },
-    { id: 'cre', title: 'Civil Engineering (Rural Engineering)', code: 'CRE', semesters: [{ id: 'sem1', title: 'Semester I', subjects: [math, chemistry, mechFund, communication, drawing, env] }] },
-    { id: 'cse', title: 'Computer Science and Engineering', code: 'CSE', semesters: [{ id: 'sem1', title: 'Semester I', subjects: [math, physics, electrical, ai, ict, constitution, oer] }] },
-    { id: 'ee', title: 'Electrical Engineering', code: 'EE', semesters: [{ id: 'sem1', title: 'Semester I', subjects: [math, physics, basicEE, drawing, ai, oer] }] },
-    { id: 'elx', title: 'Electronics Engineering', code: 'ELX', semesters: [{ id: 'sem1', title: 'Semester I', subjects: [math, physics, chemistry, mechanics, basicEE, env] }] },
-    { id: 'me', title: 'Mechanical Engineering', code: 'ME', semesters: [{ id: 'sem1', title: 'Semester I', subjects: [math, chemistry, ai, communication, drawing, mechanics] }] }
-  ];
-
-  window.PX_STUDY_DATA = {
-    meta: { name: 'Diploma Study Materials', board: 'SBTE Bihar', session: 'Admission Session 2026', scope: 'First Semester' },
-    years: [{ id: 'diploma-1', title: '1st Year', subtitle: 'Semester I - Admission Session 2026', branches: branches }]
-  };
+(function(){'use strict';
+const T=(id,title,notes)=>({id,title,type:'concept',notes:notes||null});
+const U=(id,title,topics)=>({id,title,topics:topics.map((x,i)=>typeof x==='string'?T(id+'-t'+(i+1),x):x)});
+const S=(id,code,title,units,category)=>({id,code,title,category:category||'COURSE',units:units.map((x,i)=>U(id+'-u'+(i+1),x.title||x,x.topics||[x.title||x]))});
+const n=(definition,explanation,formula,example,important,short,long,mcq)=>({definition,explanation,formula,example,important,mistakes:['Do not skip conditions, units or definitions.','Do not memorise a formula without understanding its symbols.'],short:short||[],long:long||[],mcq:mcq||[]});
+const topics=(unit,arr)=>arr.map((x,i)=>T(unit+'-'+(i+1),x));
+const mathUnits=[
+{title:'Unit 1.0 — Algebra',topics:[T('determinant','1.1 Concept and properties of determinant',n('A determinant is a single value associated with a square matrix.','Study determinant notation, order, minors, cofactors and standard properties. Interchanging two rows changes the sign; equal or proportional rows give zero.','For [[a,b],[c,d]], |A| = ad − bc.','For [[2,3],[1,4]], |A|=2×4−3×1=5.',['Only square matrices have determinants.','det(A) ≠ 0 indicates a non-singular matrix.'],['Define determinant.','State two properties of determinants.'],['Explain determinant properties with examples.'],[['A determinant is defined for','Square matrix','Any array','Only vector','None']]])),T('cramer','1.2 Solutions of simultaneous equations in three unknowns by Cramer’s rule'),T('matrix-algebra','1.3 Algebra of matrices — addition, subtraction, scalar multiplication and multiplication of two matrices'),T('adjoint-inverse','1.4 Transpose, adjoint and inverse of matrix'),T('matrix-inversion','1.5 Solutions of simultaneous equations of order 3×3 by inversion method'),T('position-vector','1.6 Position vector'),T('vector-algebra','1.7 Algebra of vectors — addition, subtraction and scalar multiplication'),T('scalar-product','1.8 Scalar product'),T('vector-product','1.9 Vector product'),T('iks-mathematics','1.10 Solution of simultaneous equations using Indian Mathematics (IKS)')]},
+{title:'Unit 2.0 — Differential Calculus',topics:topics('math-u2',['2.1 Concept of function','2.2 Different types of functions','2.3 Domain and range of function','2.4 Concept of limits and evaluation','2.5 Concept of continuity with simple problems','2.6 Differentiation by first principle','2.7 Differentiation of algebraic, trigonometric, exponential and logarithmic functions','2.8 Differentiation of sum, product and quotient of two functions','2.9 Differentiation of composite functions by chain rule','2.10 Logarithmic differentiation','2.11 Implicit differentiation','2.12 Differentiation of parametric functions','2.13 Discovery of calculus by Indian astronomers (IKS)'])},
+{title:'Unit 3.0 — Application of Differential Calculus',topics:topics('math-u3',['3.1 Successive differentiation up to second order','3.2 Rolle’s Theorem and Mean Value Theorem with examples','3.3 Rate of change of quantities','3.4 Equation of tangent and normal','3.5 Maxima and minima','3.6 Radius of curvature'])},
+{title:'Unit 4.0 — Co-ordinate Geometry',topics:topics('math-u4',['4.1 Introduction of coordinate systems','4.2 Slope of a line and angle between two lines','4.3 Point-slope, two-point, slope-intercept, intercept, normal and general forms of straight line','4.4 Perpendicular distance of a line from a point and between parallel lines','4.5 Geometry in Sulabasutras — construction of square and circling the square (IKS)','4.6 Introduction of conic sections','4.7 Equation of circle in standard form','4.8 Standard equations of parabola, ellipse and hyperbola'])},
+{title:'Unit 5.0 — Probability and Statistics',topics:topics('math-u5',['5.1 Concept of probability','5.2 Addition and multiplication theorems of probability','5.3 Mean, median and mode','5.4 Range, variance and standard deviation','5.5 Coefficient of variation'])}
+];
+const physicsUnits=['Unit 1.0 — Units and Measurements','Unit 2.0 — Simple Harmonic and Wave Motion','Unit 3.0 — Electrostatics, Electromagnetism and Electric Current','Unit 4.0 — Semiconductor Physics','Unit 5.0 — Modern Physics'].map(x=>({title:x,topics:[x.replace(/^Unit [0-9.]+ — /,'Fundamentals and applications')]}));
+const eeUnits=[
+{title:'Unit 1.0 — Basic Electrical Parameters and Concepts',topics:topics('ee1',['1.1 Electric charge, flow of charges, electric current, DC and AC, ideal and practical current sources','1.2 Charge, potential/voltage difference, induced emf/voltage, terminal voltage, ideal and practical voltage sources','1.3 Resistor — properties, classification, applications, temperature effect, series/parallel combination','1.4 Heating, magnetic and chemical effects of current, electrical work, power and energy, open and short circuit','1.5 Capacitors — properties, capacitance, reactance, stored energy, series/parallel combination, types and applications','1.6 Inductors — self and mutual inductance, reactance, voltage/current equations, stored energy, AC/DC behaviour and applications'])},
+{title:'Unit 2.0 — Fundamentals of D.C. and A.C. Circuits',topics:topics('ee2',['2.1 AC and DC current, voltage and power','2.2 Ohm’s law, Kirchhoff’s Current Law and Kirchhoff’s Voltage Law','2.3 Active/passive, linear/non-linear, unilateral/bilateral circuit elements','2.4 Node, branch, loop and mesh','2.5 Frequency, time period, amplitude, angular velocity, RMS value, average value, form factor, peak factor and power factor','2.6 Phasor representation and polar/rectangular transformation'])},
+{title:'Unit 3.0 — Magnetic Circuits and Electromagnetic Induction',topics:topics('ee3',['3.1 Magnetic flux, MMF, magnetic field strength, permeability and reluctance','3.2 Magnetic leakage and leakage coefficient','3.3 Magnetic hysteresis and hysteresis loop','3.4 Magnetization (B-H) curve','3.5 Analogy between electric and magnetic circuits','3.6 Electromagnetism'])},
+{title:'Unit 4.0 — Basic Electronic Components',topics:topics('ee4',['4.1 Semiconductor basics and p-n junction','4.2 Diode characteristics and applications','4.3 Transistor fundamentals and terminals','4.4 Active and passive electronic components','4.5 Basic electronic circuits and practical applications'])},
+{title:'Unit 5.0 — Overview of Digital Electronics',topics:topics('ee5',['5.1 Digital and analogue signals','5.2 Number systems and basic conversions','5.3 Logic gates and truth tables','5.4 Boolean logic fundamentals','5.5 Basic digital applications'])}
+];
+const aiUnits=[
+{title:'Unit 1.0 — Introduction to IT Systems and Digital Technologies',topics:topics('ai1',['1.1 Digital systems, data and information, role of IT in engineering, Internet, web browsers, secure navigation, search engines and information retrieval','1.2 Computer hardware — CPU, memory, storage, input and output devices','1.3 Operating systems — Windows, Linux and mobile OS; local files, folders and system directories','1.4 Cloud ecosystems, Google Drive/OneDrive, collaboration, sharing and Viewer/Commenter/Editor permissions','1.5 Computer networks, safe internet practices, password hygiene and digital safety'])},
+{title:'Unit 2.0 — Fundamentals of Artificial Intelligence',topics:topics('ai2',['2.1 Human vs artificial intelligence; history, evolution and milestones','2.2 Machine Learning — supervised, unsupervised and reinforcement learning; ANN and Deep Learning overview','2.3 AI models — input, processing, output, pattern recognition, training/testing data and model lifecycle','2.4 Structured vs unstructured data, data quality and train/test splitting','2.5 Visual pattern recognition, trends, relationships and Euclidean distance','2.6 AI capabilities, strengths, industrial applications, scalability and human–AI collaboration'])},
+{title:'Unit 3.0 — Core AI Applications — Computer Vision & NLP',topics:topics('ai3',['3.1 Computer Vision — machine sight, digital image processing and industrial use cases','3.2 Image segmentation, pixel analysis, object scaling and structural similarity','3.3 Object detection, identification and boundary tracking','3.4 Optical Character Recognition (OCR) for blueprints, maintenance logs and engineering data sheets','3.5 Natural Language Processing (NLP), tokenization and language interpretation'])},
+{title:'Unit 4.0 — Conversational AI and Generative Systems',topics:topics('ai4',['4.1 Chatbot architecture, Large Language Models (LLMs) and basic operational blocks','4.2 Next-word prediction, probability-based word selection, context and meaning','4.3 Prompt engineering — clear instructions, context, constraints and zero-shot prompting','4.4 Industrial applications — technical summarization, code scaffolding and workflow ideation','4.5 Zero-code generative design — prompt-based design generation and tools','4.6 AI hallucinations, bias, fact verification, source validation, privacy, copyright and responsible use'])},
+{title:'Unit 5.0 — Programming Logic & Computational Thinking using Python',topics:topics('ai5',['5.1 Step-wise problem solving, flowcharts, algorithms and Python in automation','5.2 Variables and data types — int, float, string, boolean and explicit type casting','5.3 Arithmetic, relational, logical and assignment operators','5.4 Interactive input/output using input() and formatted strings (f-strings)','5.5 if, if-else and nested if for decision making and safety thresholds','5.6 for, while and range() for repetitive calculations and conversion tables','5.7 Python lists, indexing, append and processing sequential engineering data'])}
+];
+const ictUnits=['Unit 1.0 — Word Processing','Unit 2.0 — Spreadsheets','Unit 3.0 — Presentation Tool','Unit 4.0 — Basics of Internet'].map(x=>({title:x,topics:[x.replace(/^Unit [0-9.]+ — /,'Practical skills and concepts')]}));
+const simple=(id,code,title,names,cat)=>S(id,code,title,names.map(x=>({title:x,topics:[x.replace(/^Unit [0-9.]+ — /,'Key concepts of')]})),cat);
+const math=S('math','2600101','Basic Engg. Mathematics',mathUnits,'ASC');
+const physics=S('physics','2600102B','Applied Physics — B',physicsUnits,'ASC');
+const electrical=S('fund-ee','2620103','Fundamentals of Electrical and Electronic Engg.',eeUnits,'BEC');
+const ai=S('ai','2600100','Introduction to Artificial Intelligence',aiUnits,'BCC');
+const ict=S('ict','2618107','ICT Tools',ictUnits,'BCC');
+const constitution=simple('constitution','2600007','Indian Constitution',['Unit 1.0 — Constitution and Preamble','Unit 2.0 — Fundamental Rights and Directive Principles','Unit 3.0 — Governance and Amendments'],'NRC');
+const oer=simple('oer','2600009','Open Educational Resources',['Unit 1.0 — Open Educational Resources','Unit 2.0 — Copyright and Open Licensing','Unit 3.0 — Creative Commons Licenses'],'NRC');
+const workshop=simple('workshop','2620105','Electrical & Electronics Workshop',['Unit 1.0 — Electrical and electronic workshop safety','Unit 2.0 — Components, meters and basic tools','Unit 3.0 — Wiring, soldering and PCB work'],'BEC');
+const branches=[
+{id:'ce',title:'Civil Engineering',code:'CE',semesters:[{id:'sem1',title:'Semester I',subjects:[math,physics,electrical,ai,ict,constitution,oer]}]},
+{id:'cre',title:'Civil Engineering (Rural Engineering)',code:'CRE',semesters:[{id:'sem1',title:'Semester I',subjects:[math,physics,electrical,ai,ict,constitution,oer]}]},
+{id:'cse',title:'Computer Science and Engineering',code:'CSE',semesters:[{id:'sem1',title:'Semester I',subjects:[math,physics,electrical,ai,workshop,ict,constitution,oer]}]},
+{id:'ee',title:'Electrical Engineering',code:'EE',semesters:[{id:'sem1',title:'Semester I',subjects:[math,physics,simple('basic-ee','2620104','Basic Electrical Engg.',['Unit 1.0 — Basic concepts','Unit 2.0 — Energy storing elements','Unit 3.0 — D.C. and A.C. circuits','Unit 4.0 — Magnetic circuits','Unit 5.0 — Electromagnetism'],'PCC'),simple('drawing','2615105','Engineering Drawing & Graphics',['Unit 1.0 — Basic elements of drawing','Unit 2.0 — Orthographic projections','Unit 3.0 — Isometric projection','Unit 4.0 — CAD fundamentals'],'BEC'),ai,workshop,oer]}]},
+{id:'elx',title:'Electronics Engineering',code:'ELX',semesters:[{id:'sem1',title:'Semester I',subjects:[math,physics,electrical,ai,workshop,constitution,oer]}]},
+{id:'me',title:'Mechanical Engineering',code:'ME',semesters:[{id:'sem1',title:'Semester I',subjects:[math,ai,constitution,oer]}]}
+];
+window.PX_STUDY_DATA={meta:{name:'Diploma Study Materials',board:'SBTE Bihar',session:'Admission Session 2026',scope:'First Semester',source:'SBTE Bihar 2026 curriculum'},years:[{id:'diploma-1',title:'1st Year',subtitle:'Semester I · Admission Session 2026',branches}]};
 })();

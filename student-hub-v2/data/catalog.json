@@ -1,0 +1,69 @@
+{
+  "brand": {
+    "name": "PrinceXmahto Student Hub",
+    "creator": "Prince Raj",
+    "status": "Independent student learning platform"
+  },
+  "courses": [
+    "Polytechnic",
+    "B.Tech"
+  ],
+  "branches": [
+    "CSE",
+    "IT",
+    "ECE",
+    "EE",
+    "EEE",
+    "Mechanical",
+    "Civil",
+    "AI/ML",
+    "Data Science",
+    "Robotics"
+  ],
+  "semesters": [
+    "1st",
+    "2nd",
+    "3rd",
+    "4th",
+    "5th",
+    "6th",
+    "7th",
+    "8th"
+  ],
+  "resourceTypes": [
+    "Notes",
+    "PYQs",
+    "Question Bank",
+    "Formula Sheets",
+    "Practical Manuals",
+    "Assignments",
+    "Projects"
+  ],
+  "labs": [
+    "C Programming",
+    "Python",
+    "Java",
+    "Data Structures",
+    "DBMS",
+    "Web Technology",
+    "Operating Systems",
+    "Computer Networks",
+    "Digital Electronics",
+    "Basic Electrical",
+    "Surveying",
+    "Engineering Drawing"
+  ],
+  "tools": [
+    "CGPA",
+    "SGPA",
+    "Percentage",
+    "Marks",
+    "Ohm's Law",
+    "Power",
+    "Quadratic",
+    "Unit Converter",
+    "Resistor Code",
+    "Data Converter"
+  ],
+  "dataPolicy": "Only verified or user-supplied academic data should be published; never fabricate official notices, PYQs, exam dates or government affiliation."
+}

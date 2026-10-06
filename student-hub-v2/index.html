@@ -1,1 +1,51 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#087a64"><meta name="description" content="PrinceXmahto Student Hub — By Prince Raj"><title>PrinceXmahto Student Hub</title><link rel="manifest" href="manifest.json"><link rel="stylesheet" href="styles.css"></head><body><header><a class="brand" href="#home"><b>PX</b><span>PrinceXmahto<small>Student Hub · By Prince Raj</small></span></a><nav id="nav"></nav><button id="searchBtn">Search</button><button id="themeBtn">◐</button></header><main id="app"></main><nav id="mobile"></nav><footer>PrinceXmahto · By Prince Raj · Independent student learning platform · Not affiliated with SBTE Bihar, any college or government body.</footer><dialog id="search"><input id="searchInput" placeholder="Search everything…"><div id="results"></div></dialog><script src="app.js"></script></body></html>
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#087a64"><meta name="description" content="PrinceXmahto Student Hub — By Prince Raj"><title>PrinceXmahto Student Hub</title><link rel="manifest" href="manifest.json"><link rel="stylesheet" href="styles.css"></head><body><header><a class="brand" href="#home"><b>PX</b><span>PrinceXmahto<small>Student Hub · By Prince Raj</small></span></a><nav id="nav"></nav><button id="searchBtn">Search</button><button id="themeBtn">◐</button></header><main id="app">
+<section class="hero">
+  <div>
+    <span class="eyebrow">PRINCEXMAHTO STUDENT HUB</span>
+    <h1>Study. Practice.<br>Build. Prepare.</h1>
+    <p class="muted">A unified independent workspace for Polytechnic and B.Tech students.</p>
+    <div class="actions">
+      <a class="btn primary" href="#study">Start Learning</a>
+      <a class="btn" href="#labs">Open Labs</a>
+      <a class="btn" href="#code">Code Lab</a>
+    </div>
+  </div>
+  <div class="stats">
+    <div class="stat"><span class="muted">Subjects</span><b>15</b></div>
+    <div class="stat"><span class="muted">Labs</span><b>10</b></div>
+    <div class="stat"><span class="muted">Tools</span><b>13+</b></div>
+    <div class="stat"><span class="muted">Platform</span><b>V2</b></div>
+  </div>
+</section>
+<section class="section">
+  <h2>Student Toolkit</h2>
+  <div class="grid">
+    <a class="card" href="#study" style="text-decoration:none;color:inherit"><span class="tag">STUDY</span><h3>Syllabus & Subjects</h3><p class="muted">Course, branch, semester and subject workspace.</p></a>
+    <a class="card" href="#resources" style="text-decoration:none;color:inherit"><span class="tag">PYQ</span><h3>Notes & PYQs</h3><p class="muted">Academic resource workspace.</p></a>
+    <a class="card" href="#labs" style="text-decoration:none;color:inherit"><span class="tag">LAB</span><h3>Engineering Labs</h3><p class="muted">Practical experiments and viva.</p></a>
+    <a class="card" href="#code" style="text-decoration:none;color:inherit"><span class="tag">CODE</span><h3>Code Lab</h3><p class="muted">Browser-based JavaScript practice.</p></a>
+  </div>
+</section>
+<div id="jsError" class="section" style="display:none"></div>
+</main><nav id="mobile"></nav><footer>PrinceXmahto · By Prince Raj · Independent student learning platform · Not affiliated with SBTE Bihar, any college or government body.</footer><dialog id="search"><input id="searchInput" placeholder="Search everything…"><div id="results"></div></dialog><script>
+window.addEventListener("error", function(e) {
+  if (e.filename && e.filename.indexOf("app.js") !== -1) {
+    var box = document.getElementById("jsError");
+    if (box) {
+      box.style.display = "block";
+      box.innerHTML = '<div class="card"><h2>Student Hub Runtime Error</h2><p class="muted">' +
+        String(e.message || "JavaScript failed to load.") +
+        '</p><p class="muted">Open DevTools Console for details.</p></div>';
+    }
+  }
+});
+window.addEventListener("unhandledrejection", function(e) {
+  var box = document.getElementById("jsError");
+  if (box) {
+    box.style.display = "block";
+    box.innerHTML = '<div class="card"><h2>Student Hub Error</h2><p class="muted">' +
+      String(e.reason || "Unhandled promise rejection") + '</p></div>';
+  }
+});
+</script>
+<script src="app.js?v=20261007-3"></script></body></html>

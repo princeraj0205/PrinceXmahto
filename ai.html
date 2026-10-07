@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="description" content="PrinceXmahto AI — an AI assistant powered by Gemini for students, developers and creators.">
+<title>PrinceXmahto AI — AI Assistant</title>
+<link rel="icon" type="image/svg+xml" href="/assets/princexmahto-logo.svg">
+<link rel="stylesheet" href="/style.css?v=20260917-7">
+<style>
+.ai-page{min-height:calc(100vh - 86px);padding:34px 20px 70px}.ai-shell{max-width:1100px;margin:auto}
+.ai-top{display:flex;align-items:flex-end;justify-content:space-between;gap:20px;margin:18px 0 22px}.ai-kicker{color:#7da7ff;font-size:12px;letter-spacing:.16em;font-weight:800}.ai-top h1{font-size:clamp(34px,5vw,62px);line-height:1;margin:8px 0}.ai-top p{max-width:650px;color:#9aa4b6;margin:0;line-height:1.7}.ai-status{border:1px solid rgba(125,167,255,.2);background:rgba(125,167,255,.06);padding:10px 13px;border-radius:999px;font-size:12px;color:#b9c7e8;white-space:nowrap}.ai-status i{display:inline-block;width:7px;height:7px;border-radius:50%;background:#63e6be;margin-right:7px;box-shadow:0 0 12px #63e6be}
+.ai-card{border:1px solid rgba(255,255,255,.09);background:rgba(10,14,24,.78);border-radius:24px;overflow:hidden;box-shadow:0 30px 90px rgba(0,0,0,.28);backdrop-filter:blur(16px)}
+.ai-bar{padding:14px 18px;border-bottom:1px solid rgba(255,255,255,.07);display:flex;align-items:center;justify-content:space-between;color:#aeb8ca;font-size:13px}.ai-brand{display:flex;align-items:center;gap:10px}.ai-brand img{width:30px;height:30px}.ai-brand strong{color:#fff}.ai-clear{border:0;background:transparent;color:#7f8aa0;cursor:pointer}.ai-clear:hover{color:#fff}
+.ai-messages{height:min(60vh,650px);min-height:430px;overflow:auto;padding:24px}.ai-empty{height:100%;display:grid;place-items:center;text-align:center;color:#7f8aa0}.ai-empty-inner{max-width:620px}.ai-empty-logo{width:72px;height:72px;margin-bottom:16px;filter:drop-shadow(0 0 22px rgba(100,150,255,.25))}.ai-empty h2{color:#fff;margin:0 0 10px;font-size:25px}.ai-empty p{line-height:1.6;margin:0 0 20px}.suggestions{display:flex;flex-wrap:wrap;justify-content:center;gap:9px}.suggestions button{border:1px solid rgba(255,255,255,.09);background:rgba(255,255,255,.035);color:#b8c1d2;border-radius:12px;padding:9px 12px;cursor:pointer}.suggestions button:hover{background:rgba(125,167,255,.1);color:#fff;border-color:rgba(125,167,255,.3)}
+.msg{display:flex;gap:11px;margin:0 0 20px;max-width:88%}.msg.user{margin-left:auto;flex-direction:row-reverse}.avatar{width:32px;height:32px;flex:0 0 32px;border-radius:10px;display:grid;place-items:center;font-size:13px;font-weight:800;background:linear-gradient(135deg,#355cff,#7c4dff);color:#fff}.msg.assistant .avatar{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.08)}.bubble{padding:12px 15px;border-radius:16px;background:rgba(255,255,255,.055);color:#dbe2ee;line-height:1.65;white-space:pre-wrap;overflow-wrap:anywhere}.msg.user .bubble{background:linear-gradient(135deg,rgba(57,91,255,.9),rgba(92,64,210,.9));color:#fff}.bubble p{margin:0 0 9px}.bubble p:last-child{margin-bottom:0}.bubble pre{background:#080b12;border:1px solid rgba(255,255,255,.08);padding:12px;border-radius:10px;overflow:auto}.bubble code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.9em}
+.ai-input{padding:15px;border-top:1px solid rgba(255,255,255,.07);background:rgba(5,8,15,.5)}.composer{display:flex;gap:10px;align-items:flex-end}.composer textarea{flex:1;resize:none;min-height:52px;max-height:150px;border:1px solid rgba(255,255,255,.1);outline:0;border-radius:15px;background:rgba(255,255,255,.045);color:#fff;padding:15px;font:inherit;line-height:1.45}.composer textarea:focus{border-color:rgba(125,167,255,.5);box-shadow:0 0 0 3px rgba(125,167,255,.08)}.send{width:52px;height:52px;border:0;border-radius:15px;background:#fff;color:#080b12;font-size:20px;cursor:pointer}.send:disabled{opacity:.45;cursor:not-allowed}.hint{text-align:center;color:#687388;font-size:11px;margin-top:9px}
+@media(max-width:700px){.ai-page{padding:18px 10px 45px}.ai-top{align-items:flex-start;flex-direction:column}.ai-status{display:none}.ai-messages{min-height:55vh;height:58vh;padding:16px}.msg{max-width:95%}.ai-card{border-radius:18px}.composer textarea{min-height:48px}.send{width:48px;height:48px}}
+</style>
+</head>
+<body data-page="ai">
+<header class="site-header"><div class="nav wrap">
+<a class="brand" href="/index.html"><img src="/assets/princexmahto-logo.svg" alt="PrinceXmahto logo"><span><strong>PrinceXmahto</strong><small>LEARN BUILD GROW</small></span></a>
+<button class="menu" aria-label="Open navigation" aria-expanded="false"><span></span><span></span></button>
+<nav class="nav-links"><a href="/index.html">Home</a><a href="/projects.html">Projects</a><a class="active" href="/ai.html">PrinceXmahto AI</a><a href="/study-materials.html">Study Materials</a><a href="/about.html">About</a><a href="/services.html">Services</a><a href="/roadmap.html">Roadmap</a><a href="/contact.html">Contact</a><a href="https://prince-xmahto.vercel.app/login.html?v=admin">🔐 Admin Login</a></nav>
+<div class="nav-tools"><a class="nav-cta" href="/contact.html">LET'S TALK <span>↗</span></a></div>
+</div></header>
+<main class="ai-page"><div class="ai-shell">
+<div class="ai-top"><div><div class="ai-kicker">PX AI · GEMINI POWERED</div><h1>PrinceXmahto <em>AI</em></h1><p>Your personal AI assistant for study, coding, ideas and everyday questions. Ask naturally in English, Hindi or Hinglish.</p></div><div class="ai-status"><i></i> Online</div></div>
+<section class="ai-card">
+<div class="ai-bar"><div class="ai-brand"><img src="/assets/princexmahto-logo.svg" alt=""><strong>PrinceXmahto AI</strong><span>· Gemini</span></div><button class="ai-clear" id="clearBtn">New chat</button></div>
+<div class="ai-messages" id="messages"><div class="ai-empty" id="empty"><div class="ai-empty-inner"><img class="ai-empty-logo" src="/assets/princexmahto-logo.svg" alt=""><h2>What can I help you build?</h2><p>Ask me to explain a topic, debug code, create study notes, plan a project, or brainstorm your next idea.</p><div class="suggestions"><button>Explain HTML & CSS simply</button><button>Make me a CSE study plan</button><button>Debug my JavaScript</button><button>Give me a project idea</button></div></div></div></div>
+<div class="ai-input"><div class="composer"><textarea id="prompt" rows="1" placeholder="Message PrinceXmahto AI…" aria-label="Message PrinceXmahto AI"></textarea><button class="send" id="send" aria-label="Send">↑</button></div><div class="hint">Enter to send · Shift + Enter for a new line</div></div>
+</section></div></main>
+<script>
+const messagesEl=document.getElementById('messages'),empty=document.getElementById('empty'),promptEl=document.getElementById('prompt'),send=document.getElementById('send'),clearBtn=document.getElementById('clearBtn');
+let history=[];
+function esc(s){return s.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function renderText(s){let x=esc(s);x=x.replace(/\`\`\`([\\s\\S]*?)\`\`\`/g,'<pre><code>$1</code></pre>');x=x.replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>');x=x.replace(/\`([^\`]+)\`/g,'<code>$1</code>');x=x.split(/\\n{2,}/).map(p=>'<p>'+p.replace(/\\n/g,'<br>')+'</p>').join('');return x;}
+function addMessage(role,text,typing=false){if(empty)empty.remove();const row=document.createElement('div');row.className='msg '+role;row.innerHTML='<div class="avatar">'+(role==='user'?'P':'AI')+'</div><div class="bubble">'+(typing?'Thinking…':renderText(text))+'</div>';messagesEl.appendChild(row);messagesEl.scrollTop=messagesEl.scrollHeight;return row.querySelector('.bubble');}
+async function ask(text){text=text.trim();if(!text||send.disabled)return;addMessage('user',text);history.push({role:'user',text});promptEl.value='';promptEl.style.height='auto';send.disabled=true;const bubble=addMessage('assistant','',true);
+try{const res=await fetch('/api/prince-ai',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:text,history:history.slice(-12)})});const data=await res.json();if(!res.ok)throw new Error(data.error||'AI request failed');bubble.innerHTML=renderText(data.reply||'I could not generate a response.');history.push({role:'assistant',text:data.reply||''});}
+catch(err){bubble.textContent='Sorry, I could not connect right now. '+err.message;}
+finally{send.disabled=false;promptEl.focus();messagesEl.scrollTop=messagesEl.scrollHeight;}}
+send.addEventListener('click',()=>ask(promptEl.value));promptEl.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();ask(promptEl.value)}});promptEl.addEventListener('input',()=>{promptEl.style.height='auto';promptEl.style.height=Math.min(promptEl.scrollHeight,150)+'px'});clearBtn.addEventListener('click',()=>{history=[];messagesEl.innerHTML='<div class="ai-empty" id="empty"><div class="ai-empty-inner"><img class="ai-empty-logo" src="/assets/princexmahto-logo.svg" alt=""><h2>New conversation</h2><p>Ask anything about study, coding, projects or ideas.</p></div></div>';});
+document.querySelectorAll('.suggestions button').forEach(b=>b.addEventListener('click',()=>ask(b.textContent)));
+</script>
+<script src="/script.js?v=20260917-7"></script>
+</body></html>

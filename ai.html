@@ -33,46 +33,118 @@
 <div class="ai-input"><div class="composer"><textarea id="prompt" rows="1" placeholder="Message PrinceXmahto AI…" aria-label="Message PrinceXmahto AI"></textarea><button class="send" id="send" aria-label="Send">↑</button></div><div class="hint">Enter to send · Shift + Enter for a new line</div></div>
 </section></div></main>
 <script>
-const messagesEl=document.getElementById('messages'),promptEl=document.getElementById('prompt'),send=document.getElementById('send'),clearBtn=document.getElementById('clearBtn');
+const messagesEl=document.getElementById('messages');
+const promptEl=document.getElementById('prompt');
+const send=document.getElementById('send');
+const clearBtn=document.getElementById('clearBtn');
 let history=[];
 const BT=String.fromCharCode(96);
-function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
-function inline(s){return s.replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>').replace(/\*([^*\n]+)\*/g,'<strong>$1</strong>').replace(new RegExp(BT+'([^'+BT+'\\n]+)'+BT,'g'),'<code>$1</code>');}
+
+function esc(s){
+  return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function inline(s){
+  return s
+    .replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>')
+    .replace(/\*([^*\n]+)\*/g,'<strong>$1</strong>')
+    .replace(new RegExp(BT+'([^'+BT+'\\n]+)'+BT,'g'),'<code>$1</code>');
+}
 function renderText(s){
-  const blocks=String(s).split(/\n{2,}/);let out='';
+  const blocks=String(s).split(/\n{2,}/);
+  let out='';
   for(const raw of blocks){
-    const block=raw.trim();if(!block)continue;
-    const fence=new RegExp('^'+BT+'{3}(\\w+)?\\n?([\\s\\S]*?)'+BT+'{3}?v=20260917-7"></script>
-</body></html>);
+    const block=raw.trim();
+    if(!block) continue;
+    const fence=new RegExp('^'+BT+'{3}(\\w+)?\\n?([\\s\\S]*?)'+BT+'{3}$');
     const code=block.match(fence);
-    if(code){const lang=esc(code[1]||'code');const val=esc(code[2].trim());out+='<div class="code-wrap"><div class="code-head"><span>'+lang+'</span><button class="copy-code" onclick="copyCode(this)">Copy</button></div><pre><code>'+val+'</code></pre></div>';continue;}
-    if(/^#{1,4}\s/.test(block)){const m=block.match(/^(#{1,4})\s+(.+)$/);const tag=m[1].length<=3?'h3':'h4';out+='<'+tag+'>'+inline(esc(m[2]))+'</'+tag+'>';continue;}
+    if(code){
+      const lang=esc(code[1]||'code');
+      const val=esc(code[2].trim());
+      out+='<div class="code-wrap"><div class="code-head"><span>'+lang+'</span><button class="copy-code" onclick="copyCode(this)">Copy</button></div><pre><code>'+val+'</code></pre></div>';
+      continue;
+    }
+    const heading=block.match(/^(#{1,4})\s+(.+)$/);
+    if(heading){
+      const tag=heading[1].length<=3?'h3':'h4';
+      out+='<'+tag+'>'+inline(esc(heading[2]))+'</'+tag+'>';
+      continue;
+    }
     const lines=block.split('\n');
-    if(lines.every(l=>/^\s*[-*]\s+/.test(l))){out+='<ul>'+lines.map(l=>'<li>'+inline(esc(l.replace(/^\s*[-*]\s+/,'')))+'</li>').join('')+'</ul>';continue;}
-    if(lines.every(l=>/^\s*\d+[.)]\s+/.test(l))){out+='<ol>'+lines.map(l=>'<li>'+inline(esc(l.replace(/^\s*\d+[.)]\s+/,'')))+'</li>').join('')+'</ol>';continue;}
+    if(lines.every(l=>/^\s*[-*]\s+/.test(l))){
+      out+='<ul>'+lines.map(l=>'<li>'+inline(esc(l.replace(/^\s*[-*]\s+/,'')))+'</li>').join('')+'</ul>';
+      continue;
+    }
+    if(lines.every(l=>/^\s*\d+[.)]\s+/.test(l))){
+      out+='<ol>'+lines.map(l=>'<li>'+inline(esc(l.replace(/^\s*\d+[.)]\s+/,'')))+'</li>').join('')+'</ol>';
+      continue;
+    }
     out+='<p>'+lines.map(l=>inline(esc(l))).join('<br>')+'</p>';
   }
   return out;
 }
-function copyCode(btn){const code=btn.closest('.code-wrap').querySelector('code').innerText;navigator.clipboard?.writeText(code);btn.textContent='Copied';setTimeout(()=>btn.textContent='Copy',1200);}
+function copyCode(btn){
+  const code=btn.closest('.code-wrap').querySelector('code').innerText;
+  if(navigator.clipboard) navigator.clipboard.writeText(code);
+  btn.textContent='Copied';
+  setTimeout(()=>btn.textContent='Copy',1200);
+}
 function addMessage(role,text,typing=false){
-  const row=document.createElement('div');row.className='msg '+role;
+  const row=document.createElement('div');
+  row.className='msg '+role;
   row.innerHTML='<div class="avatar">'+(role==='user'?'P':'AI')+'</div><div class="bubble">'+(typing?'<div class="typing"><i></i><i></i><i></i></div>':renderText(text))+'</div>';
-  messagesEl.appendChild(row);messagesEl.scrollTop=messagesEl.scrollHeight;return row.querySelector('.bubble');
+  messagesEl.appendChild(row);
+  messagesEl.scrollTop=messagesEl.scrollHeight;
+  return row.querySelector('.bubble');
 }
 async function ask(text){
-  text=text.trim();if(!text||send.disabled)return;
-  const empty=document.getElementById('empty');if(empty)empty.remove();
-  addMessage('user',text);history.push({role:'user',text});promptEl.value='';promptEl.style.height='auto';send.disabled=true;
+  text=String(text||'').trim();
+  if(!text || send.disabled) return;
+  const empty=document.getElementById('empty');
+  if(empty) empty.remove();
+  addMessage('user',text);
+  history.push({role:'user',text});
+  promptEl.value='';
+  promptEl.style.height='auto';
+  send.disabled=true;
   const bubble=addMessage('assistant','',true);
-  try{const res=await fetch('/api/prince-ai',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:text,history:history.slice(-12)})});const data=await res.json();if(!res.ok)throw new Error(data.error||'AI request failed');bubble.innerHTML=renderText(data.reply||'I could not generate a response.');history.push({role:'assistant',text:data.reply||''});}
-  catch(err){bubble.innerHTML='<p><strong>Hmm, something went wrong.</strong><br>'+esc(err.message)+'</p>';}
-  finally{send.disabled=false;promptEl.focus();messagesEl.scrollTop=messagesEl.scrollHeight;}
+  try{
+    const res=await fetch('/api/prince-ai',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({message:text,history:history.slice(-12)})
+    });
+    const data=await res.json();
+    if(!res.ok) throw new Error(data.error||'AI request failed');
+    bubble.innerHTML=renderText(data.reply||'I could not generate a response.');
+    history.push({role:'assistant',text:data.reply||''});
+  }catch(err){
+    bubble.innerHTML='<p><strong>Hmm, something went wrong.</strong><br>'+esc(err.message)+'</p>';
+  }finally{
+    send.disabled=false;
+    promptEl.focus();
+    messagesEl.scrollTop=messagesEl.scrollHeight;
+  }
 }
 send.addEventListener('click',()=>ask(promptEl.value));
-promptEl.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();ask(promptEl.value)}});
-promptEl.addEventListener('input',()=>{promptEl.style.height='auto';promptEl.style.height=Math.min(promptEl.scrollHeight,160)+'px'});
-clearBtn.addEventListener('click',()=>{history=[];messagesEl.innerHTML='<div class="ai-empty" id="empty"><div class="ai-empty-inner"><img class="ai-empty-logo" src="/assets/princexmahto-logo.svg" alt=""><h2>Fresh start ✨</h2><p>What are you curious about?</p><div class="suggestions"><button>Teach me something interesting</button><button>Give me a project idea</button></div></div></div>';bindSuggestions();});
-function bindSuggestions(){document.querySelectorAll('.suggestions button').forEach(b=>b.addEventListener('click',()=>ask(b.textContent)))}bindSuggestions();
-</script>\n<script src="/script.js?v=20260917-7"></script>
+promptEl.addEventListener('keydown',e=>{
+  if(e.key==='Enter'&&!e.shiftKey){
+    e.preventDefault();
+    ask(promptEl.value);
+  }
+});
+promptEl.addEventListener('input',()=>{
+  promptEl.style.height='auto';
+  promptEl.style.height=Math.min(promptEl.scrollHeight,160)+'px';
+});
+clearBtn.addEventListener('click',()=>{
+  history=[];
+  messagesEl.innerHTML='<div class="ai-empty" id="empty"><div class="ai-empty-inner"><img class="ai-empty-logo" src="/assets/princexmahto-logo.svg" alt=""><h2>Fresh start ✨</h2><p>What are you curious about?</p><div class="suggestions"><button>Teach me something interesting</button><button>Give me a project idea</button></div></div></div>';
+  bindSuggestions();
+});
+function bindSuggestions(){
+  document.querySelectorAll('.suggestions button').forEach(b=>b.addEventListener('click',()=>ask(b.textContent)));
+}
+bindSuggestions();
+</script>
+<script src="/script.js?v=20260917-7"></script>
 </body></html>
